@@ -232,6 +232,16 @@
         <label><input type="checkbox" data-toggle="happiness" checked><span>&#128522; Happiness</span></label>
     </div>
     <button id="reset-btn">&#8962; Reset View</button>
+    <div class="btn-group" id="view-mode-group">
+        <button class="stat-btn active" data-view="heat">&#127777; Heat Map</button>
+        <button class="stat-btn" data-view="image">&#127760; Image</button>
+        <button class="stat-btn" data-view="both">&#9678; Both</button>
+    </div>
+    <div id="opacity-control" style="display:none; align-items:center; gap:6px; font-size:11px; color:#aaa;">
+        <span>Opacity:</span>
+        <input type="range" id="heat-opacity" min="0" max="100" value="70" style="width:80px; accent-color:#e94560;">
+        <span id="opacity-val">70%</span>
+    </div>
     <button id="planner-toggle-btn">&#127759; Civ Planner</button>
     <button id="upload-btn">&#128194; Load JSON</button>
     <input type="file" id="file-input" accept=".json,.txt">
@@ -386,6 +396,7 @@
     function getNorm(zone) {
         if (currentStat === 'score') return zone._score;
         const r = ranges[currentStat];
+        if (!r) return 0;
         return (zone[currentStat] - r.min) / (r.max - r.min);
     }
 
@@ -393,27 +404,42 @@
         if (!RAW.length) return;
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         const cs = CELL * scale;
-        const gap = Math.max(0.5, scale * 0.5);
-        for (let row = 0; row < ROWS; row++) {
-            for (let col = 0; col < COLS; col++) {
-                const zone = grid[row * COLS + col];
-                if (!zone) continue;
-                const px = col * cs + offsetX;
-                const py = row * cs + offsetY;
-                if (px + cs < 0 || py + cs < 0 || px > canvas.width || py > canvas.height) continue;
-                const [r,g,b] = heatColor(getNorm(zone));
-                ctx.fillStyle = `rgb(${r},${g},${b})`;
-                ctx.fillRect(px + gap, py + gap, cs - gap*2, cs - gap*2);
-            }
+        const mapW = COLS * cs;
+        const mapH = ROWS * cs;
+
+        if ((viewMode === 'image' || viewMode === 'both') && worldMapImg.complete && worldMapImg.naturalWidth) {
+            ctx.drawImage(worldMapImg, offsetX, offsetY, mapW, mapH);
         }
-        const ox = Math.round((0 - X_MIN) / STEP) * cs + offsetX;
-        const oy = Math.round((0 - Z_MIN) / STEP) * cs + offsetY;
-        ctx.strokeStyle = 'rgba(255,255,255,0.25)';
-        ctx.lineWidth = 1;
-        ctx.setLineDash([4,4]);
-        ctx.beginPath(); ctx.moveTo(ox, 0); ctx.lineTo(ox, canvas.height); ctx.stroke();
-        ctx.beginPath(); ctx.moveTo(0, oy); ctx.lineTo(canvas.width, oy); ctx.stroke();
-        ctx.setLineDash([]);
+
+        if (viewMode === 'heat' || viewMode === 'both') {
+            ctx.globalAlpha = viewMode === 'both' ? parseInt(heatOpacity.value) / 100 : 1;
+            if (viewMode === 'both') {
+                ctx.fillStyle = 'rgba(0,0,0,0.45)';
+                ctx.fillRect(offsetX, offsetY, mapW, mapH);
+            }
+            const gap = Math.max(0.5, scale * 0.5);
+            for (let row = 0; row < ROWS; row++) {
+                for (let col = 0; col < COLS; col++) {
+                    const zone = grid[row * COLS + col];
+                    if (!zone) continue;
+                    const px = col * cs + offsetX;
+                    const py = row * cs + offsetY;
+                    if (px + cs < 0 || py + cs < 0 || px > canvas.width || py > canvas.height) continue;
+                    const [r,g,b] = heatColor(getNorm(zone));
+                    ctx.fillStyle = `rgb(${r},${g},${b})`;
+                    ctx.fillRect(px + gap, py + gap, cs - gap*2, cs - gap*2);
+                }
+            }
+            const ox = Math.round((0 - X_MIN) / STEP) * cs + offsetX;
+            const oy = Math.round((0 - Z_MIN) / STEP) * cs + offsetY;
+            ctx.strokeStyle = 'rgba(255,255,255,0.25)';
+            ctx.lineWidth = 1;
+            ctx.setLineDash([4,4]);
+            ctx.beginPath(); ctx.moveTo(ox, 0); ctx.lineTo(ox, canvas.height); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(0, oy); ctx.lineTo(canvas.width, oy); ctx.stroke();
+            ctx.setLineDash([]);
+        }
+        ctx.globalAlpha = 1;
 
         drawPlanner();
     }
@@ -439,6 +465,7 @@
             document.getElementById('legend-max').textContent = '100%';
         } else {
             const r = ranges[currentStat];
+            if (!r) return;
             document.getElementById('legend-min').textContent = r.min;
             document.getElementById('legend-max').textContent = r.max;
         }
@@ -510,9 +537,9 @@
     });
     wrap.addEventListener('mouseleave', () => { tooltip.style.display = 'none'; });
 
-    document.querySelectorAll('.stat-btn').forEach(btn => {
+    document.querySelectorAll('[data-stat]').forEach(btn => {
         btn.addEventListener('click', () => {
-            document.querySelectorAll('.stat-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('[data-stat]').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
             currentStat = btn.dataset.stat;
             document.getElementById('score-toggles').style.display = currentStat === 'score' ? 'flex' : 'none';
@@ -810,6 +837,35 @@
         document.getElementById('planner-panel').classList.toggle('open', plannerActive);
         document.getElementById('planner-toggle-btn').classList.toggle('active', plannerActive);
         resize();
+    });
+
+    // ── View Mode (Heat / Image / Both) ──────────────────────────────────────────
+    const heatOpacity   = document.getElementById('heat-opacity');
+    const opacityVal    = document.getElementById('opacity-val');
+    const opacityCtrl   = document.getElementById('opacity-control');
+    let viewMode = 'heat';
+
+    const worldMapImg = new Image();
+    worldMapImg.src = 'world_map.png';
+    worldMapImg.onload = () => { if (RAW.length) draw(); };
+
+    function applyViewMode() {
+        opacityCtrl.style.display = viewMode === 'both' ? 'flex' : 'none';
+        if (RAW.length) draw();
+    }
+
+    document.querySelectorAll('[data-view]').forEach(btn => {
+        btn.addEventListener('click', () => {
+            viewMode = btn.dataset.view;
+            document.querySelectorAll('[data-view]').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            applyViewMode();
+        });
+    });
+
+    heatOpacity.addEventListener('input', () => {
+        opacityVal.textContent = heatOpacity.value + '%';
+        if (RAW.length) draw();
     });
 
     // ── Boot ──────────────────────────────────────────────────────────────────────
