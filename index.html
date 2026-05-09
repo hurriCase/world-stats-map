@@ -242,6 +242,11 @@
         <input type="range" id="heat-opacity" min="0" max="100" value="70" style="width:80px; accent-color:#e94560;">
         <span id="opacity-val">70%</span>
     </div>
+    <div id="coord-search" style="display:flex; align-items:center; gap:4px;">
+        <input type="number" id="search-x" placeholder="X" style="width:70px; padding:4px 6px; background:#111d2e; border:1px solid #1a2a40; border-radius:4px; color:#e0e0e0; font-size:11px;">
+        <input type="number" id="search-z" placeholder="Z" style="width:70px; padding:4px 6px; background:#111d2e; border:1px solid #1a2a40; border-radius:4px; color:#e0e0e0; font-size:11px;">
+        <button id="search-btn" style="padding:5px 10px; border:1px solid #0f3460; background:#0f3460; color:#aaa; border-radius:4px; cursor:pointer; font-size:11px;">&#128269; Go</button>
+    </div>
     <button id="planner-toggle-btn">&#127759; Civ Planner</button>
     <button id="upload-btn">&#128194; Load JSON</button>
     <input type="file" id="file-input" accept=".json,.txt">
@@ -466,6 +471,7 @@
         ctx.setLineDash([]);
 
         drawPlanner();
+        drawSearchHighlight();
     }
 
     function centerView() {
@@ -906,6 +912,55 @@
     canvas.height = wrap.clientHeight;
     pfgCanvas.width  = wrap.clientWidth;
     pfgCanvas.height = wrap.clientHeight;
+
+    let searchHighlight = null; // { col, row }
+
+    function drawSearchHighlight() {
+        if (!searchHighlight) return;
+        const cs = CELL * scale;
+        const { col, row } = searchHighlight;
+        const sx = col * cs + offsetX;
+        const sy = row * cs + offsetY;
+        ctx.save();
+        ctx.strokeStyle = 'rgba(255, 220, 0, 0.95)';
+        ctx.lineWidth = Math.max(2, cs * 0.12);
+        ctx.setLineDash([]);
+        ctx.strokeRect(sx + 1, sy + 1, cs - 2, cs - 2);
+        ctx.fillStyle = 'rgba(255, 220, 0, 0.15)';
+        ctx.fillRect(sx + 1, sy + 1, cs - 2, cs - 2);
+        ctx.restore();
+    }
+
+    function searchAndJump() {
+        if (!RAW.length) return;
+        const wx = parseInt(document.getElementById('search-x').value);
+        const wz = parseInt(document.getElementById('search-z').value);
+        if (isNaN(wx) || isNaN(wz)) return;
+
+        const col = Math.round((wx - X_MIN) / STEP);
+        const row = Math.round((wz - Z_MIN) / STEP);
+        const zone = getZoneByGrid ? getZoneByGrid(col, row) : (grid[row * COLS + col] || null);
+
+        if (!zone && (col < 0 || col >= COLS || row < 0 || row >= ROWS)) {
+            coordDisplay.textContent = `Zone (${wx}, ${wz}) not found`;
+            searchHighlight = null;
+            draw();
+            return;
+        }
+
+        searchHighlight = { col, row };
+
+        const cs = CELL * scale;
+        offsetX = wrap.clientWidth  / 2 - (col + 0.5) * cs;
+        offsetY = wrap.clientHeight / 2 - (row + 0.5) * cs;
+
+        draw();
+        if (zone) coordDisplay.textContent = `Found: Zone (${zone.x}, ${zone.z})  |  ID: ${zone.id}`;
+    }
+
+    document.getElementById('search-btn').addEventListener('click', searchAndJump);
+    document.getElementById('search-x').addEventListener('keydown', e => { if (e.key === 'Enter') searchAndJump(); });
+    document.getElementById('search-z').addEventListener('keydown', e => { if (e.key === 'Enter') searchAndJump(); });
 
     fetch('data.json')
         .then(r => { if (!r.ok) throw new Error('data.json not found'); return r.json(); })
