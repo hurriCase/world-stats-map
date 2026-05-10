@@ -968,8 +968,102 @@
     // ══════════════════════════════════════════════════════════════════════════════
     // Trades Layer
     // ══════════════════════════════════════════════════════════════════════════════
+
+    // water = true means Fishing Boat terrain (cyan), false = Trade Outpost (green)
+    const TRADE_INFO = {
+        Algae:      { buffs: 'Catalyst | Vitamin | Year of Plenty', coins: 150, water: true },
+        Amber:      { buffs: 'Extraction | Fine Art', coins: 650, water: false },
+        Banana:     { buffs: 'Barter | Joywire | Year of Plenty', coins: 175, water: false },
+        Barley:     { buffs: 'Investment | Optimization | Vitamin', coins: 150, water: false },
+        Bison:      { buffs: 'Barricade | Maintenance | Rush', coins: 350, water: false },
+        Cattle:     { buffs: 'Carnival | Efficient Gears', coins: 275, water: false },
+        Cinnamon:   { buffs: 'Innovation | Joywire', coins: 650, water: false },
+        Citrus:     { buffs: 'Enjoyment | Gourmet | Medicine', coins: 300, water: false },
+        Clam:       { buffs: 'Barricade | Investment | Smeltery', coins: 200, water: true },
+        Clove:      { buffs: 'Optimization | Investment', coins: 650, water: false },
+        Cod:        { buffs: 'Enjoyment | Extraction | Investment', coins: 175, water: true },
+        Cocoa:      { buffs: 'Toys | Prosperity', coins: 550, water: false },
+        Coffee:     { buffs: 'Construction | Innovation', coins: 550, water: false },
+        Corn:       { buffs: 'Preservative | Progression | Vitamin', coins: 150, water: false },
+        Cotton:     { buffs: 'Maintenance | Investment | Profit', coins: 300, water: false },
+        Crab:       { buffs: 'Toys | Optimization | Reinforced Masonry', coins: 400, water: true },
+        Deer:       { buffs: 'Carnival | Gourmet | Prosperity', coins: 275, water: false },
+        Eel:        { buffs: 'Advanced Tooling | Catalyst | Optics', coins: 275, water: true },
+        Fugu:       { buffs: 'Propaganda | Medicine', coins: 800, water: true },
+        Gem:        { buffs: 'Fine Art', coins: 900, water: false },
+        Grape:      { buffs: 'Enjoyment | Great Work | Progression', coins: 300, water: false },
+        Guarana:    { buffs: 'Construction | Medicine | Optics', coins: 300, water: false },
+        Hemlock:    { buffs: 'Fire Bomb | Reinforced Masonry | Year Of Plenty', coins: 150, water: false },
+        Honey:      { buffs: 'Advanced Tooling | Propaganda | Smeltery', coins: 200, water: false },
+        Incense:    { buffs: 'Fine Art | Management | Smeltery', coins: 350, water: false },
+        Ivory:      { buffs: 'Fire Bomb | Monopoly', coins: 700, water: false },
+        Jellyfish:  { buffs: 'Catalyst | Fire Bomb', coins: 400, water: true },
+        Lobster:    { buffs: 'Gourmet | Monopoly', coins: 600, water: true },
+        Marble:     { buffs: 'Barricade | Great Work | Rush', coins: 450, water: false },
+        Olive:      { buffs: 'Enjoyment | Preservative', coins: 175, water: false },
+        Papyrus:    { buffs: 'Efficient Gears | Innovation | Optics', coins: 300, water: false },
+        Pearl:      { buffs: 'Great Work | Optics', coins: 800, water: true },
+        Pelt:       { buffs: 'Barter | Monopoly', coins: 500, water: false },
+        Rice:       { buffs: 'Maintenance | Medicine | Preservative', coins: 150, water: false },
+        Salmon:     { buffs: 'Efficient Gears | Profit | Preservative', coins: 250, water: true },
+        Salt:       { buffs: 'Barter | Management | Preservative', coins: 300, water: true },
+        Seal:       { buffs: 'Barter | Carnival | Maintenance', coins: 450, water: true },
+        Shipwreck:  { buffs: 'Great Work', coins: 900, water: true },
+        Shrimp:     { buffs: 'Innovation | Maintenance | Management', coins: 250, water: true },
+        Silk:       { buffs: 'Fine Art | Prosperity', coins: 650, water: false },
+        Spice:      { buffs: 'Extraction | Profit', coins: 600, water: false },
+        Squid:      { buffs: 'Advanced Tooling | Prosperity | Reinforced Masonry', coins: 200, water: true },
+        Sugar:      { buffs: 'Joywire | Rush', coins: 550, water: false },
+        Tea:        { buffs: 'Great Work | Propaganda', coins: 550, water: false },
+        Tobacco:    { buffs: 'Progression | Propaganda', coins: 650, water: false },
+        Trout:      { buffs: 'Extraction | Smeltery | Year Of Plenty', coins: 175, water: true },
+        Truffle:    { buffs: 'Barter | Gourmet', coins: 800, water: false },
+        Tuna:       { buffs: 'Construction | Enjoyment | Maintenance', coins: 300, water: true },
+        Turtle:     { buffs: 'Barricade | Toys | Progression', coins: 550, water: true },
+        Whale:      { buffs: 'Innovation', coins: 700, water: true },
+    };
+
+    const BUFF_DESC = {
+        'Advanced Tooling':   "Increases Mines' Hammer production by 10%",
+        'Barricade':          'Increases Wall Hit Points by 10%',
+        'Barter':             'Increases mineral exchange rate at Bank by 5% (10% at lvl 8)',
+        'Carnival':           "Increases Town's Happiness by 10",
+        'Construction':       'Increases Hammers by 85 (+10 per Era)',
+        'Catalyst':           'Reduces Catalyst hammer cost by 3%',
+        'Efficient Gears':    'Increases Trommels/Bakeries/Sawmills output by 25%',
+        'Enjoyment':          'Grants +3 Happiness',
+        'Extraction':         "Increases Trommel's chance of precious minerals by 5%",
+        'Fine Art':           "Increases Town's Culture output by 10%",
+        'Fire Bomb':          'Increases arrow damage by 1, Arrow Towers shoot flaming arrows',
+        'Gourmet':            "Increases Town's Cottage Rate by 10%",
+        'Great Work':         "Increases Town's Culture by 45 base (+15 per Era)",
+        'Innovation':         'Reduces all beaker costs by 3% (max 3 in civ)',
+        'Investment':         'Increases town tax by flat 5%',
+        'Joywire':            'Reduces Golden Age scaling impact by 10%',
+        'Maintenance':        "Reduces Town's Upkeep by 10%",
+        'Management':         'Reduces Labs/Mines/Temples consumption by 10%',
+        'Medicine':           'Reduces respawn time in Town Hall by 10 seconds',
+        'Monopoly':           'Increases Coins from socketed Trade Goods by 10%',
+        'Optics':             "Increases Towers' range by 10%",
+        'Optimization':       "Increases Town's Global Rate by 2%",
+        'Preservative':       "Reduces Town's Cottage consumption by 25%",
+        'Profit':             "Increases Town's Income Rate by 5%",
+        'Progression':        'Increases hourly Golden Age points by 10',
+        'Propaganda':         "Reduces Town's Unhappiness by 1",
+        'Prosperity':         'Increases hourly Golden Age points by 10%',
+        'Rush':               'Reduces Structure Hammer cost by 10% (Wonders 5%)',
+        'Smeltery':           'Increases Smeltery Smelt Rate by 10%',
+        'Reinforced Masonry': 'Increases Tower Hit Points by 10%',
+        'Toys':               "Increases Town's Happiness Rate by 10%",
+        'Vitamin':            "Reduces Town's Pasture consumption by 20%",
+        'Year of Plenty':     "Increases Town's Growth Rate by 15%",
+        'Year Of Plenty':     "Increases Town's Growth Rate by 15%",
+    };
+
+    const COLOR_WATER = '#00e5ff';  // cyan  — Fishing Boat
+    const COLOR_LAND  = '#4edfa8';  // green — Trade Outpost
+
     const TRADES_RAW = [
-        {name:'Tea',x:7768,z:4505},{name:'Tea',x:7768,z:4505},
         {name:'Tea',x:7768,z:4505},{name:'Trout',x:7864,z:4550},
         {name:'Pelt',x:7000,z:4424},{name:'Clam',x:6920,z:4504},
         {name:'Crab',x:6600,z:4456},{name:'Amber',x:6072,z:4408},
@@ -979,15 +1073,12 @@
         {name:'Tuna',x:7208,z:4232},{name:'Clam',x:7384,z:4184},
         {name:'Fugu',x:7304,z:4136},{name:'Jellyfish',x:7416,z:4232},
         {name:'Seal',x:8120,z:4328},{name:'Turtle',x:6552,z:3976},
-        {name:'Rice',x:6440,z:4088},{name:'Crab',x:6760,z:3448},
-        {name:'Lobster',x:6648,z:3464},{name:'Guarana',x:6696,z:3192},
-        {name:'Fugu',x:7368,z:2824},{name:'Jellyfish',x:7176,z:2840},
-        {name:'Papyrus',x:6328,z:3112},{name:'Lobster',x:6424,z:2744},
-        {name:'Fugu',x:6616,z:2744},{name:'Spice',x:6616,z:2648},
-        {name:'Turtle',x:7800,z:2792},{name:'Marble',x:6888,z:2568},
-        {name:'Trout',x:6824,z:2504},{name:'Marble',x:6888,z:2568},
-        {name:'Trout',x:6824,z:2504},{name:'Lobster',x:6424,z:2744},
-        {name:'Fugu',x:6616,z:2744},{name:'Spice',x:6616,z:2648},
+        {name:'Crab',x:6760,z:3448},{name:'Lobster',x:6648,z:3464},
+        {name:'Guarana',x:6696,z:3192},{name:'Fugu',x:7368,z:2824},
+        {name:'Jellyfish',x:7176,z:2840},{name:'Papyrus',x:6328,z:3112},
+        {name:'Lobster',x:6424,z:2744},{name:'Fugu',x:6616,z:2744},
+        {name:'Spice',x:6616,z:2648},{name:'Turtle',x:7800,z:2792},
+        {name:'Marble',x:6888,z:2568},{name:'Trout',x:6824,z:2504},
         {name:'Ivory',x:6280,z:2424},{name:'Cod',x:6904,z:2376},
         {name:'Shipwreck',x:6824,z:2344},{name:'Algae',x:7160,z:2472},
         {name:'Salt',x:7944,z:2424},{name:'Tuna',x:8072,z:2408},
@@ -1015,21 +1106,12 @@
     // Deduplicate by name+x+z
     const TRADES = [...new Map(TRADES_RAW.map(t => [`${t.name}|${t.x}|${t.z}`, t])).values()];
 
-    // Assign stable colors per resource type
-    const TRADE_TYPE_COLORS = {};
-    const TRADE_PALETTE = [
-        '#ffd700','#ff7f50','#00e5ff','#90ee90','#ff69b4',
-        '#da70d6','#40e0d0','#f4a460','#87ceeb','#ff6347',
-        '#adff2f','#ff8c00','#dda0dd','#20b2aa','#b0c4de',
-    ];
-    let _tci = 0;
-    for (const t of TRADES) {
-        if (!TRADE_TYPE_COLORS[t.name]) {
-            TRADE_TYPE_COLORS[t.name] = TRADE_PALETTE[_tci++ % TRADE_PALETTE.length];
-        }
-    }
-
     let tradesVisible = false;
+
+    function tradeColor(name) {
+        const info = TRADE_INFO[name];
+        return info && info.water ? COLOR_WATER : COLOR_LAND;
+    }
 
     function worldToScreen(wx, wz) {
         const cs = CELL * scale;
@@ -1053,15 +1135,13 @@
             const [sx, sy] = worldToScreen(t.x, t.z);
             if (sx < -dotR || sy < -dotR || sx > canvas.width + dotR || sy > canvas.height + dotR) continue;
 
-            const color = TRADE_TYPE_COLORS[t.name];
+            const color = tradeColor(t.name);
 
-            // Outer glow
             ctx.beginPath();
             ctx.arc(sx, sy, dotR + 2, 0, Math.PI * 2);
             ctx.fillStyle = 'rgba(0,0,0,0.45)';
             ctx.fill();
 
-            // Dot
             ctx.beginPath();
             ctx.arc(sx, sy, dotR, 0, Math.PI * 2);
             ctx.fillStyle = color;
@@ -1071,9 +1151,9 @@
             ctx.stroke();
 
             if (showLabels) {
-                ctx.fillStyle = 'rgba(0,0,0,0.6)';
                 const labelY = sy - dotR - 2;
                 const tw = ctx.measureText(t.name).width;
+                ctx.fillStyle = 'rgba(0,0,0,0.6)';
                 ctx.fillRect(sx - tw / 2 - 2, labelY - 10, tw + 4, 11);
                 ctx.fillStyle = color;
                 ctx.fillText(t.name, sx, labelY);
@@ -1082,14 +1162,14 @@
         ctx.restore();
     }
 
-    // Inject drawTrades into draw() — patch the existing draw call
+    // Inject drawTrades into draw()
     const _origDraw = draw;
     draw = function() {
         _origDraw();
         drawTrades();
     };
 
-    // Trades tooltip — extend mousemove handler
+    // Trades tooltip
     wrap.addEventListener('mousemove', e => {
         if (!tradesVisible || !RAW.length) return;
         const rect = wrap.getBoundingClientRect();
@@ -1106,19 +1186,30 @@
         }
 
         if (nearest) {
-            const color = TRADE_TYPE_COLORS[nearest.name];
+            const info = TRADE_INFO[nearest.name] || {};
+            const color = tradeColor(nearest.name);
+            const terrain = info.water ? '🚤 Fishing Boat' : '🏕️ Trade Outpost';
+            const buffNames = info.buffs ? info.buffs.split(' | ') : [];
+            const buffsHtml = buffNames.map(b => {
+                const desc = BUFF_DESC[b] || b;
+                return `<div class="tip-row" style="margin-top:3px"><span class="tip-label" style="color:#7ec8ff;min-width:0;flex-shrink:0">${b}</span></div>` +
+                    `<div style="font-size:10px;color:#ccc;padding-left:4px;margin-bottom:2px">${desc}</div>`;
+            }).join('');
             tooltip.innerHTML =
                 `<div class="tip-title" style="color:${color}">${nearest.name}</div>` +
-                `<div class="tip-row"><span class="tip-label">Coordinates</span><span class="tip-val">(${nearest.x}, ${nearest.z})</span></div>`;
+                `<div class="tip-biome">${terrain}</div>` +
+                `<div class="tip-row"><span class="tip-label">Coins/hour</span><span class="tip-val highlight">${info.coins ?? '?'}</span></div>` +
+                `<div style="margin-top:5px;border-top:1px solid #1a2a40;padding-top:5px">${buffsHtml}</div>` +
+                `<div class="tip-row" style="margin-top:4px;border-top:1px solid #1a2a40;padding-top:4px"><span class="tip-label">Coords</span><span class="tip-val">(${nearest.x}, ${nearest.z})</span></div>`;
             tooltip.style.display = 'block';
             let tx = e.clientX + 16, ty = e.clientY - 10;
-            if (tx + 220 > window.innerWidth)  tx = e.clientX - 230;
-            if (ty + 100 > window.innerHeight) ty = window.innerHeight - 110;
+            if (tx + 280 > window.innerWidth)  tx = e.clientX - 290;
+            if (ty + 220 > window.innerHeight) ty = window.innerHeight - 230;
             tooltip.style.left = tx + 'px';
             tooltip.style.top  = ty + 'px';
             e.stopImmediatePropagation();
         }
-    }, true); // capture phase so it runs before zone tooltip
+    }, true);
 
     document.getElementById('trades-toggle-btn').addEventListener('click', () => {
         tradesVisible = !tradesVisible;
