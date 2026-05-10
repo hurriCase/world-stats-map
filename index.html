@@ -131,7 +131,7 @@
         #tooltip .tip-val { font-weight: 600; color: #fff; }
         #tooltip .tip-val.highlight { color: #ffd700; }
 
-        #reset-btn, #planner-toggle-btn {
+        #reset-btn, #planner-toggle-btn, #trades-toggle-btn {
             padding: 5px 10px;
             border: 1px solid #555;
             background: #222;
@@ -144,6 +144,8 @@
         #reset-btn:hover { background: #333; color: #fff; }
         #planner-toggle-btn:hover { background: #333; color: #fff; }
         #planner-toggle-btn.active { background: #0f3460; border-color: #e94560; color: #e94560; }
+        #trades-toggle-btn:hover { background: #333; color: #fff; }
+        #trades-toggle-btn.active { background: #1a3d20; border-color: #4edfa8; color: #4edfa8; }
 
         /* ── Civ Planner Panel ─────────────────────────────────────────────────── */
         #planner-panel {
@@ -247,6 +249,7 @@
         <input type="number" id="search-z" placeholder="Z" style="width:70px; padding:4px 6px; background:#111d2e; border:1px solid #1a2a40; border-radius:4px; color:#e0e0e0; font-size:11px;">
         <button id="search-btn" style="padding:5px 10px; border:1px solid #0f3460; background:#0f3460; color:#aaa; border-radius:4px; cursor:pointer; font-size:11px;">&#128269; Go</button>
     </div>
+    <button id="trades-toggle-btn">&#128178; Trades</button>
     <button id="planner-toggle-btn">&#127759; Civ Planner</button>
     <button id="upload-btn">&#128194; Load JSON</button>
     <input type="file" id="file-input" accept=".json,.txt">
@@ -961,6 +964,167 @@
     document.getElementById('search-btn').addEventListener('click', searchAndJump);
     document.getElementById('search-x').addEventListener('keydown', e => { if (e.key === 'Enter') searchAndJump(); });
     document.getElementById('search-z').addEventListener('keydown', e => { if (e.key === 'Enter') searchAndJump(); });
+
+    // ══════════════════════════════════════════════════════════════════════════════
+    // Trades Layer
+    // ══════════════════════════════════════════════════════════════════════════════
+    const TRADES_RAW = [
+        {name:'Tea',x:7768,z:4505},{name:'Tea',x:7768,z:4505},
+        {name:'Tea',x:7768,z:4505},{name:'Trout',x:7864,z:4550},
+        {name:'Pelt',x:7000,z:4424},{name:'Clam',x:6920,z:4504},
+        {name:'Crab',x:6600,z:4456},{name:'Amber',x:6072,z:4408},
+        {name:'Rice',x:6440,z:4088},{name:'Ivory',x:6536,z:4376},
+        {name:'Pelt',x:6744,z:4344},{name:'Bison',x:7112,z:4344},
+        {name:'Squid',x:7064,z:4248},{name:'Tuna',x:7240,z:4120},
+        {name:'Tuna',x:7208,z:4232},{name:'Clam',x:7384,z:4184},
+        {name:'Fugu',x:7304,z:4136},{name:'Jellyfish',x:7416,z:4232},
+        {name:'Seal',x:8120,z:4328},{name:'Turtle',x:6552,z:3976},
+        {name:'Rice',x:6440,z:4088},{name:'Crab',x:6760,z:3448},
+        {name:'Lobster',x:6648,z:3464},{name:'Guarana',x:6696,z:3192},
+        {name:'Fugu',x:7368,z:2824},{name:'Jellyfish',x:7176,z:2840},
+        {name:'Papyrus',x:6328,z:3112},{name:'Lobster',x:6424,z:2744},
+        {name:'Fugu',x:6616,z:2744},{name:'Spice',x:6616,z:2648},
+        {name:'Turtle',x:7800,z:2792},{name:'Marble',x:6888,z:2568},
+        {name:'Trout',x:6824,z:2504},{name:'Marble',x:6888,z:2568},
+        {name:'Trout',x:6824,z:2504},{name:'Lobster',x:6424,z:2744},
+        {name:'Fugu',x:6616,z:2744},{name:'Spice',x:6616,z:2648},
+        {name:'Ivory',x:6280,z:2424},{name:'Cod',x:6904,z:2376},
+        {name:'Shipwreck',x:6824,z:2344},{name:'Algae',x:7160,z:2472},
+        {name:'Salt',x:7944,z:2424},{name:'Tuna',x:8072,z:2408},
+        {name:'Seal',x:8200,z:2440},{name:'Shrimp',x:8152,z:2408},
+        {name:'Lobster',x:8280,z:2376},{name:'Algae',x:8872,z:2440},
+        {name:'Olive',x:8632,z:2232},{name:'Corn',x:8520,z:2168},
+        {name:'Lobster',x:8536,z:2232},{name:'Whale',x:8440,z:2264},
+        {name:'Tuna',x:8168,z:2280},{name:'Silk',x:6693,z:2296},
+        {name:'Tea',x:6216,z:2200},{name:'Barley',x:6264,z:2120},
+        {name:'Banana',x:6776,z:2088},{name:'Gem',x:6936,z:2040},
+        {name:'Turtle',x:7048,z:2088},{name:'Eel',x:7128,z:2152},
+        {name:'Jellyfish',x:8056,z:2152},{name:'Shipwreck',x:7608,z:1912},
+        {name:'Truffle',x:6872,z:1944},{name:'Algae',x:7448,z:1720},
+        {name:'Tuna',x:8376,z:1832},{name:'Turtle',x:8248,z:1736},
+        {name:'Tuna',x:7896,z:1624},{name:'Tuna',x:7768,z:1672},
+        {name:'Salmon',x:7544,z:1592},{name:'Eel',x:7416,z:1624},
+        {name:'Turtle',x:7240,z:1624},{name:'Amber',x:7048,z:1416},
+        {name:'Cocoa',x:7240,z:1448},{name:'Tobacco',x:7544,z:1432},
+        {name:'Sugar',x:7608,z:1416},{name:'Truffle',x:7240,z:1304},
+        {name:'Gem',x:7080,z:1288},{name:'Jellyfish',x:7144,z:1144},
+        {name:'Cattle',x:7624,z:1096},{name:'Gem',x:7720,z:1192},
+        {name:'Pelt',x:7624,z:1192},
+    ];
+
+    // Deduplicate by name+x+z
+    const TRADES = [...new Map(TRADES_RAW.map(t => [`${t.name}|${t.x}|${t.z}`, t])).values()];
+
+    // Assign stable colors per resource type
+    const TRADE_TYPE_COLORS = {};
+    const TRADE_PALETTE = [
+        '#ffd700','#ff7f50','#00e5ff','#90ee90','#ff69b4',
+        '#da70d6','#40e0d0','#f4a460','#87ceeb','#ff6347',
+        '#adff2f','#ff8c00','#dda0dd','#20b2aa','#b0c4de',
+    ];
+    let _tci = 0;
+    for (const t of TRADES) {
+        if (!TRADE_TYPE_COLORS[t.name]) {
+            TRADE_TYPE_COLORS[t.name] = TRADE_PALETTE[_tci++ % TRADE_PALETTE.length];
+        }
+    }
+
+    let tradesVisible = false;
+
+    function worldToScreen(wx, wz) {
+        const cs = CELL * scale;
+        const col = (wx - X_MIN) / STEP;
+        const row = (wz - Z_MIN) / STEP;
+        return [col * cs + offsetX, row * cs + offsetY];
+    }
+
+    function drawTrades() {
+        if (!tradesVisible || !RAW.length) return;
+        const cs = CELL * scale;
+        const dotR = Math.max(3, Math.min(cs * 0.38, 10));
+        const showLabels = cs > 8;
+
+        ctx.save();
+        ctx.font = `bold ${Math.max(8, Math.min(11, cs * 0.55))}px Segoe UI, sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'bottom';
+
+        for (const t of TRADES) {
+            const [sx, sy] = worldToScreen(t.x, t.z);
+            if (sx < -dotR || sy < -dotR || sx > canvas.width + dotR || sy > canvas.height + dotR) continue;
+
+            const color = TRADE_TYPE_COLORS[t.name];
+
+            // Outer glow
+            ctx.beginPath();
+            ctx.arc(sx, sy, dotR + 2, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(0,0,0,0.45)';
+            ctx.fill();
+
+            // Dot
+            ctx.beginPath();
+            ctx.arc(sx, sy, dotR, 0, Math.PI * 2);
+            ctx.fillStyle = color;
+            ctx.fill();
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 1;
+            ctx.stroke();
+
+            if (showLabels) {
+                ctx.fillStyle = 'rgba(0,0,0,0.6)';
+                const labelY = sy - dotR - 2;
+                const tw = ctx.measureText(t.name).width;
+                ctx.fillRect(sx - tw / 2 - 2, labelY - 10, tw + 4, 11);
+                ctx.fillStyle = color;
+                ctx.fillText(t.name, sx, labelY);
+            }
+        }
+        ctx.restore();
+    }
+
+    // Inject drawTrades into draw() — patch the existing draw call
+    const _origDraw = draw;
+    draw = function() {
+        _origDraw();
+        drawTrades();
+    };
+
+    // Trades tooltip — extend mousemove handler
+    wrap.addEventListener('mousemove', e => {
+        if (!tradesVisible || !RAW.length) return;
+        const rect = wrap.getBoundingClientRect();
+        const mx = e.clientX - rect.left;
+        const my = e.clientY - rect.top;
+        const cs = CELL * scale;
+        const hitR = Math.max(6, Math.min(cs * 0.5, 14));
+
+        let nearest = null, nearestD2 = hitR * hitR;
+        for (const t of TRADES) {
+            const [sx, sy] = worldToScreen(t.x, t.z);
+            const d2 = (mx - sx) ** 2 + (my - sy) ** 2;
+            if (d2 < nearestD2) { nearestD2 = d2; nearest = t; }
+        }
+
+        if (nearest) {
+            const color = TRADE_TYPE_COLORS[nearest.name];
+            tooltip.innerHTML =
+                `<div class="tip-title" style="color:${color}">${nearest.name}</div>` +
+                `<div class="tip-row"><span class="tip-label">Coordinates</span><span class="tip-val">(${nearest.x}, ${nearest.z})</span></div>`;
+            tooltip.style.display = 'block';
+            let tx = e.clientX + 16, ty = e.clientY - 10;
+            if (tx + 220 > window.innerWidth)  tx = e.clientX - 230;
+            if (ty + 100 > window.innerHeight) ty = window.innerHeight - 110;
+            tooltip.style.left = tx + 'px';
+            tooltip.style.top  = ty + 'px';
+            e.stopImmediatePropagation();
+        }
+    }, true); // capture phase so it runs before zone tooltip
+
+    document.getElementById('trades-toggle-btn').addEventListener('click', () => {
+        tradesVisible = !tradesVisible;
+        document.getElementById('trades-toggle-btn').classList.toggle('active', tradesVisible);
+        draw();
+    });
 
     fetch('data.json')
         .then(r => { if (!r.ok) throw new Error('data.json not found'); return r.json(); })
