@@ -312,6 +312,7 @@
                 <div class="p-stat-card"><div class="p-stat-label">Happiness</div><div class="p-stat-val" id="s-happiness">—</div></div>
             </div>
             <button id="export-btn" style="margin-top:8px;width:100%;padding:5px 0;font-size:11px;border:1px solid #1a2a40;background:#111d2e;color:#6a8aaa;border-radius:4px;cursor:pointer;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#6a8aaa'">&#128196; Export</button>
+            <button id="import-btn" style="margin-top:4px;width:100%;padding:5px 0;font-size:11px;border:1px solid #1a2a40;background:#111d2e;color:#6a8aaa;border-radius:4px;cursor:pointer;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#6a8aaa'">&#128228; Import</button>
         </div>
     </div>
 </div>
@@ -1286,6 +1287,55 @@
                 btn.style.color = '#4edfa8';
                 setTimeout(() => { btn.innerHTML = '&#128196; Export'; btn.style.color = '#6a8aaa'; }, 2000);
             });
+    });
+
+    document.getElementById('import-btn').addEventListener('click', async () => {
+        let text;
+        try { text = await navigator.clipboard.readText(); }
+        catch { text = prompt('Paste exported layout:'); }
+        if (!text) return;
+
+        const result = [];
+        let current = null;
+        for (const rawLine of text.split('\n')) {
+            const line = rawLine.trim();
+            if (!line) continue;
+
+            if (line.startsWith('★ Capital') || line.startsWith('Town')) {
+                if (current) result.push(current);
+                const levelMatch = line.match(/Level (\d+)/);
+                current = {
+                    isCapital: line.startsWith('★'),
+                    level: levelMatch ? parseInt(levelMatch[1]) : 1,
+                    col: null, row: null,
+                };
+            } else if (current && line.startsWith('Zone ID:')) {
+                const coordMatch = line.match(/Coords:\s*\((-?\d+),\s*(-?\d+)\)/);
+                if (coordMatch) {
+                    const wx = parseInt(coordMatch[1]);
+                    const wz = parseInt(coordMatch[2]);
+                    current.col = Math.floor((wx - X_MIN) / STEP);
+                    current.row = Math.floor((wz - Z_MIN) / STEP);
+                }
+            }
+        }
+        if (current) result.push(current);
+
+        const valid = result.filter(t => t.col !== null);
+        if (!valid.length) { alert('Nothing to import'); return; }
+
+        towns = [];
+        colorIdx = 0;
+        nextId = 1;
+        for (const t of valid) {
+            towns.push({ id: nextId++, col: t.col, row: t.row, level: t.level, isCapital: t.isCapital, color: TOWN_COLORS[colorIdx++ % TOWN_COLORS.length] });
+        }
+        draw();
+
+        const btn = document.getElementById('import-btn');
+        btn.textContent = `✓ Imported ${valid.length} town(s)`;
+        btn.style.color = '#4edfa8';
+        setTimeout(() => { btn.innerHTML = '&#128228; Import'; btn.style.color = '#6a8aaa'; }, 2000);
     });
 </script>
 </body>
