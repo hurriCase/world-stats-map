@@ -311,6 +311,7 @@
                 <div class="p-stat-card"><div class="p-stat-label">Growth</div><div class="p-stat-val" id="s-growth">—</div></div>
                 <div class="p-stat-card"><div class="p-stat-label">Happiness</div><div class="p-stat-val" id="s-happiness">—</div></div>
             </div>
+            <button id="export-btn" style="margin-top:8px;width:100%;padding:5px 0;font-size:11px;border:1px solid #1a2a40;background:#111d2e;color:#6a8aaa;border-radius:4px;cursor:pointer;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#6a8aaa'">&#128196; Export</button>
         </div>
     </div>
 </div>
@@ -1245,6 +1246,47 @@
         .catch(err => {
             overlay.textContent = 'No data.json found — use "Load JSON" to open a file.';
         });
+
+    document.getElementById('export-btn').addEventListener('click', () => {
+        if (!towns.length) return;
+        const claimed = computeClaimed();
+        const lines = [];
+        for (let ti = 0; ti < towns.length; ti++) {
+            const t = towns[ti];
+            const s = townZoneStats(ti, claimed);
+            const zone = getZoneByGrid(t.col, t.row);
+            lines.push(`${t.isCapital ? '★ Capital' : 'Town'} (Level ${t.level})`);
+            if (zone) lines.push(`  Zone ID: ${zone.id}  Coords: (${zone.x}, ${zone.z})`);
+            lines.push(`  Zones claimed: ${s.zones}`);
+            if (RAW.length && s.zones) {
+                lines.push(`  Hammers:   ${s.hammers.toFixed(1)}`);
+                lines.push(`  Beakers:   ${s.beakers.toFixed(1)}`);
+                lines.push(`  Growth:    ${s.growth.toFixed(1)}`);
+                lines.push(`  Happiness: ${s.happiness.toFixed(2)}`);
+            }
+            lines.push('');
+        }
+        const claimed2 = computeClaimed();
+        let h=0,b=0,g=0,hap=0;
+        for (let ti=0;ti<towns.length;ti++) {
+            const s=townZoneStats(ti,claimed2);
+            h+=s.hammers;b+=s.beakers;g+=s.growth;hap+=s.happiness;
+        }
+        if (RAW.length) {
+            lines.push('── Total ──');
+            lines.push(`  Hammers:   ${h.toFixed(1)}`);
+            lines.push(`  Beakers:   ${b.toFixed(1)}`);
+            lines.push(`  Growth:    ${g.toFixed(1)}`);
+            lines.push(`  Happiness: ${hap.toFixed(2)}`);
+        }
+        navigator.clipboard.writeText(lines.join('\n'))
+            .then(() => {
+                const btn = document.getElementById('export-btn');
+                btn.textContent = '✓ Copied!';
+                btn.style.color = '#4edfa8';
+                setTimeout(() => { btn.innerHTML = '&#128196; Export'; btn.style.color = '#6a8aaa'; }, 2000);
+            });
+    });
 </script>
 </body>
 </html>
