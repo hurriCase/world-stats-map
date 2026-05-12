@@ -1212,7 +1212,13 @@
                 `<div class="tip-biome">${terrain}</div>` +
                 `<div class="tip-row"><span class="tip-label">Coins/hour</span><span class="tip-val highlight">${info.coins ?? '?'}</span></div>` +
                 `<div style="margin-top:5px;border-top:1px solid #1a2a40;padding-top:5px">${buffsHtml}</div>` +
-                `<div class="tip-row" style="margin-top:4px;border-top:1px solid #1a2a40;padding-top:4px"><span class="tip-label">Coords</span><span class="tip-val">(${nearest.x}, ${nearest.z})</span></div>`;
+                `<div class="tip-row" style="margin-top:4px;border-top:1px solid #1a2a40;padding-top:4px"><span class="tip-label">Coords</span><span class="tip-val">(${nearest.x}, ${nearest.z})</span></div>` +
+                (() => {
+                    const col = Math.floor((nearest.x - X_MIN) / STEP);
+                    const row = Math.floor((nearest.z - Z_MIN) / STEP);
+                    const zone = getZoneByGrid(col, row);
+                    return zone ? `<div class="tip-row"><span class="tip-label">Zone ID</span><span class="tip-val highlight">${zone.id}</span></div>` : '';
+                })();
             tooltip.style.display = 'block';
             let tx = e.clientX + 16, ty = e.clientY - 10;
             if (tx + 280 > window.innerWidth)  tx = e.clientX - 290;
