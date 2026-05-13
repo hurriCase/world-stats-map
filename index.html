@@ -422,35 +422,37 @@
 <div id="canvas-wrap">
     <canvas id="map"></canvas>
     <canvas id="planner-fg"></canvas>
-    <div id="overlay">Loading data.json…</div>
+    <div id="overlay" data-i18n="loadingData">Loading data.json…</div>
 </div>
 
 <!-- TOP BAR -->
 <div class="hud" id="hud-top">
-    <h1>⬡ World Map</h1>
+    <h1>⬡ <span data-i18n="title">World Map</span></h1>
     <div class="v-sep"></div>
 
     <div class="btn-group" id="view-mode-group">
-        <button class="stat-btn active" data-view="heat">Heat</button>
-        <button class="stat-btn" data-view="image">Image</button>
-        <button class="stat-btn" data-view="both">Both</button>
+        <button class="stat-btn active" data-view="heat" data-i18n="viewHeat">Heat</button>
+        <button class="stat-btn" data-view="image" data-i18n="viewImage">Image</button>
+        <button class="stat-btn" data-view="both" data-i18n="viewBoth">Both</button>
     </div>
 
     <div id="opacity-control">
-        <span>Opacity</span>
+        <span data-i18n="opacity">Opacity</span>
         <input type="range" id="heat-opacity" min="0" max="100" value="70">
         <span id="opacity-val">70%</span>
     </div>
 
     <div class="v-sep"></div>
 
-    <button class="icon-btn" id="reset-btn">Reset View</button>
-    <button class="icon-btn" id="trades-toggle-btn">Trades</button>
-    <button class="icon-btn" id="planner-toggle-btn">Civ Planner</button>
+    <button class="icon-btn" id="reset-btn" data-i18n="resetView">Reset View</button>
+    <button class="icon-btn" id="trades-toggle-btn" data-i18n="trades">Trades</button>
+    <button class="icon-btn" id="planner-toggle-btn" data-i18n="civPlanner">Civ Planner</button>
 
     <div class="v-sep"></div>
 
-    <button class="icon-btn" id="upload-btn">Load JSON</button>
+    <button class="icon-btn" id="lang-btn" style="font-family:var(--mono);letter-spacing:.05em">EN</button>
+    <div class="v-sep"></div>
+    <button class="icon-btn" id="upload-btn" data-i18n="loadJson">Load JSON</button>
     <input type="file" id="file-input" accept=".json,.txt">
 
     <div class="h-spacer"></div>
@@ -464,51 +466,51 @@
 
 <!-- LEFT PANEL: stat + weights -->
 <div class="hud" id="hud-left">
-    <div class="panel-label">Stat</div>
-    <button class="stat-btn active" data-stat="score">Score</button>
-    <button class="stat-btn" data-stat="hammers">Hammers</button>
-    <button class="stat-btn" data-stat="beakers">Beakers</button>
-    <button class="stat-btn" data-stat="growth">Growth</button>
-    <button class="stat-btn" data-stat="happiness">Happiness</button>
+    <div class="panel-label" data-i18n="statLabel">Stat</div>
+    <button class="stat-btn active" data-stat="score" data-i18n="statScore">Score</button>
+    <button class="stat-btn" data-stat="hammers" data-i18n="statHammers">Hammers</button>
+    <button class="stat-btn" data-stat="beakers" data-i18n="statBeakers">Beakers</button>
+    <button class="stat-btn" data-stat="growth" data-i18n="statGrowth">Growth</button>
+    <button class="stat-btn" data-stat="happiness" data-i18n="statHappiness">Happiness</button>
 
-    <div class="panel-label" style="margin-top:8px">Weight</div>
-    <div class="weight-row"><label><input type="checkbox" data-toggle="hammers" checked><span>Hammers</span></label></div>
-    <div class="weight-row"><label><input type="checkbox" data-toggle="beakers" checked><span>Beakers</span></label></div>
-    <div class="weight-row"><label><input type="checkbox" data-toggle="growth" checked><span>Growth</span></label></div>
-    <div class="weight-row"><label><input type="checkbox" data-toggle="happiness" checked><span>Happiness</span></label></div>
+    <div class="panel-label" style="margin-top:8px" data-i18n="weightLabel">Weight</div>
+    <div class="weight-row"><label><input type="checkbox" data-toggle="hammers" checked><span data-i18n="statHammers">Hammers</span></label></div>
+    <div class="weight-row"><label><input type="checkbox" data-toggle="beakers" checked><span data-i18n="statBeakers">Beakers</span></label></div>
+    <div class="weight-row"><label><input type="checkbox" data-toggle="growth" checked><span data-i18n="statGrowth">Growth</span></label></div>
+    <div class="weight-row"><label><input type="checkbox" data-toggle="happiness" checked><span data-i18n="statHappiness">Happiness</span></label></div>
 </div>
 
 <!-- BOTTOM LEFT: coordinates -->
 <div class="hud" id="hud-coords">
-    <div class="coords-label">Zone</div>
+    <div class="coords-label" data-i18n="zoneLabel">Zone</div>
     <div id="coord-display">—</div>
 </div>
 
 <!-- BOTTOM CENTER: coord search -->
 <div class="hud" id="hud-search">
-    <span class="search-label">Jump to</span>
+    <span class="search-label" data-i18n="jumpTo">Jump to</span>
     <input type="number" id="search-x" placeholder="X">
     <input type="number" id="search-z" placeholder="Z">
-    <button class="icon-btn" id="search-btn">Go</button>
+    <button class="icon-btn" id="search-btn" data-i18n="go">Go</button>
 </div>
 
 <!-- BOTTOM RIGHT: zoom -->
 <div class="hud" id="hud-zoom">
-    <span class="zoom-label">Zoom</span>
+    <span class="zoom-label" data-i18n="zoomLabel">Zoom</span>
     <span id="zoom-display">100%</span>
 </div>
 
 <!-- PLANNER PANEL -->
 <div id="planner-panel">
     <div id="planner-top">
-        <h2>Civ Planner</h2>
+        <h2 data-i18n="plannerTitle">Civ Planner</h2>
         <div class="p-mode-row">
-            <button class="p-mode-btn" id="btn-capital" onclick="setMode('capital')">Capital</button>
-            <button class="p-mode-btn" id="btn-town"    onclick="setMode('town')">Town</button>
-            <button class="p-mode-btn" id="btn-remove"  onclick="setMode('remove')">Remove</button>
+            <button class="p-mode-btn" id="btn-capital" onclick="setMode('capital')" data-i18n="capital">Capital</button>
+            <button class="p-mode-btn" id="btn-town" onclick="setMode('town')" data-i18n="town">Town</button>
+            <button class="p-mode-btn" id="btn-remove" onclick="setMode('remove')" data-i18n="remove">Remove</button>
         </div>
         <div class="p-cult-row">
-            <label>Level</label>
+            <label data-i18n="levelLabel">Level</label>
             <select id="cult-select">
                 <option value="1">1 — 1 zone</option>
                 <option value="2">2 — 2 zones</option>
@@ -530,15 +532,15 @@
     </div>
     <div id="town-list"><div class="p-empty">Place a capital first,<br>then add towns.</div></div>
     <div id="planner-stats">
-        <h3>Total</h3>
+        <h3 data-i18n="totalLabel">Total</h3>
         <div class="p-stat-grid">
             <div class="p-stat-card"><div class="p-stat-label">Hammers</div><div class="p-stat-val" id="s-hammers">—</div></div>
             <div class="p-stat-card"><div class="p-stat-label">Beakers</div><div class="p-stat-val" id="s-beakers">—</div></div>
             <div class="p-stat-card"><div class="p-stat-label">Growth</div><div class="p-stat-val" id="s-growth">—</div></div>
             <div class="p-stat-card"><div class="p-stat-label">Happiness</div><div class="p-stat-val" id="s-happiness">—</div></div>
         </div>
-        <button class="p-action-btn" id="export-btn">Export</button>
-        <button class="p-action-btn" id="import-btn">Import</button>
+        <button class="p-action-btn" id="export-btn" data-i18n="exportBtn">Export</button>
+        <button class="p-action-btn" id="import-btn" data-i18n="importBtn">Import</button>
     </div>
 </div>
 

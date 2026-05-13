@@ -2,6 +2,7 @@
 // map.js — core map viewer
 // ══════════════════════════════════════════════════════════════════════════════
 import { TRADE_INFO, BUFF_DESC, TRADES_RAW } from './trades.js';
+import { t, setLang, lang, applyStaticStrings, tradeName, buffName, buffDesc } from './locale.js';
 
 export const STAT_KEYS = ['hammers', 'beakers', 'growth', 'happiness'];
 export const CELL = 6;
@@ -169,7 +170,7 @@ export function initData(data) {
     restoreSavedView();
     updateLegend();
     overlay.style.display = 'none';
-    coordDisplay.textContent = 'hover over a zone';
+    coordDisplay.textContent = t('hoverHint');
     resize();
 }
 
@@ -422,7 +423,7 @@ wrap.addEventListener('mousemove', e => {
     const row  = Math.floor((e.clientY - rect.top  - offsetY) / cs);
     if (col < 0 || col >= COLS || row < 0 || row >= ROWS) {
         tooltip.style.display = 'none';
-        coordDisplay.textContent = 'hover over a zone';
+        coordDisplay.textContent = t('hoverHint');
         return;
     }
     const zone = grid[row * COLS + col];
@@ -434,14 +435,14 @@ wrap.addEventListener('mousemove', e => {
 
     const hl = s => currentStat === s ? 'highlight' : '';
     tooltip.innerHTML =
-        `<div class="tip-title">Zone ${zone.id}</div>` +
+        `<div class="tip-title">${t('zoneLabel')} ${zone.id}</div>` +
         `<div class="tip-biome">${zone.biomes}</div>` +
-        `<div class="tip-row"><span class="tip-label">Coordinates</span><span class="tip-val">(${zone.x}, ${zone.z})</span></div>` +
-        `<div class="tip-row"><span class="tip-label">Score</span><span class="tip-val highlight">${score}%</span></div>` +
-        `<div class="tip-row"><span class="tip-label">Hammers</span><span class="tip-val ${hl('hammers')}">${zone.hammers}</span></div>` +
-        `<div class="tip-row"><span class="tip-label">Beakers</span><span class="tip-val ${hl('beakers')}">${zone.beakers}</span></div>` +
-        `<div class="tip-row"><span class="tip-label">Growth</span><span class="tip-val ${hl('growth')}">${zone.growth}</span></div>` +
-        `<div class="tip-row"><span class="tip-label">Happiness</span><span class="tip-val ${hl('happiness')}">${zone.happiness}</span></div>`;
+        `<div class="tip-row"><span class="tip-label">${t('coordinates')}</span><span class="tip-val">(${zone.x}, ${zone.z})</span></div>` +
+        `<div class="tip-row"><span class="tip-label">${t('score')}</span><span class="tip-val highlight">${score}%</span></div>` +
+        `<div class="tip-row"><span class="tip-label">${t('hammers')}</span><span class="tip-val ${hl('hammers')}">${zone.hammers}</span></div>` +
+        `<div class="tip-row"><span class="tip-label">${t('beakers')}</span><span class="tip-val ${hl('beakers')}">${zone.beakers}</span></div>` +
+        `<div class="tip-row"><span class="tip-label">${t('growth')}</span><span class="tip-val ${hl('growth')}">${zone.growth}</span></div>` +
+        `<div class="tip-row"><span class="tip-label">${t('happiness')}</span><span class="tip-val ${hl('happiness')}">${zone.happiness}</span></div>`;
 
     tooltip.style.display = 'block';
     let tx = e.clientX + 16, ty = e.clientY - 10;
@@ -471,24 +472,24 @@ wrap.addEventListener('mousemove', e => {
     if (nearest) {
         const info = TRADE_INFO[nearest.name] || {};
         const color = tradeColor(nearest.name);
-        const terrain = info.water ? '🚤 Fishing Boat' : '🏕️ Trade Outpost';
+        const terrain = info.water ? t('fishingBoat') : t('tradeOutpost');
         const buffNames = info.buffs ? info.buffs.split(' | ') : [];
         const buffsHtml = buffNames.map(b => {
-            const desc = BUFF_DESC[b] || b;
-            return `<div class="tip-row" style="margin-top:3px"><span class="tip-label" style="color:#7ec8ff;min-width:0;flex-shrink:0">${b}</span></div>` +
+            const desc = buffDesc(b) || BUFF_DESC[b] || b;
+            return `<div class="tip-row" style="margin-top:3px"><span class="tip-label" style="color:#7ec8ff;min-width:0;flex-shrink:0">${buffName(b)}</span></div>` +
                 `<div style="font-size:10px;color:#ccc;padding-left:4px;margin-bottom:2px">${desc}</div>`;
         }).join('');
         tooltip.innerHTML =
-            `<div class="tip-title" style="color:${color}">${nearest.name}</div>` +
+            `<div class="tip-title" style="color:${color}">${tradeName(nearest.name)}</div>` +
             `<div class="tip-biome">${terrain}</div>` +
-            `<div class="tip-row"><span class="tip-label">Coins/hour</span><span class="tip-val highlight">${info.coins ?? '?'}</span></div>` +
+            `<div class="tip-row"><span class="tip-label">${t('coinsPerHour')}</span><span class="tip-val highlight">${info.coins ?? '?'}</span></div>` +
             `<div style="margin-top:5px;border-top:1px solid #1a2a40;padding-top:5px">${buffsHtml}</div>` +
-            `<div class="tip-row" style="margin-top:4px;border-top:1px solid #1a2a40;padding-top:4px"><span class="tip-label">Coords</span><span class="tip-val">(${nearest.x}, ${nearest.z})</span></div>` +
+            `<div class="tip-row" style="margin-top:4px;border-top:1px solid #1a2a40;padding-top:4px"><span class="tip-label">${t('coords')}</span><span class="tip-val">(${nearest.x}, ${nearest.z})</span></div>` +
             (() => {
                 const col = Math.floor((nearest.x - X_MIN) / STEP);
                 const row = Math.floor((nearest.z - Z_MIN) / STEP);
                 const zone = getZoneByGrid(col, row);
-                return zone ? `<div class="tip-row"><span class="tip-label">Zone ID</span><span class="tip-val highlight">${zone.id}</span></div>` : '';
+                return zone ? `<div class="tip-row"><span class="tip-label">${t('zoneId')}</span><span class="tip-val highlight">${zone.id}</span></div>` : '';
             })();
         tooltip.style.display = 'block';
         let tx = e.clientX + 16, ty = e.clientY - 10;
@@ -534,7 +535,7 @@ document.getElementById('upload-btn').addEventListener('click', () => {
 document.getElementById('file-input').addEventListener('change', e => {
     const file = e.target.files[0];
     if (!file) return;
-    overlay.textContent = `Loading ${file.name}…`;
+    overlay.textContent = t('loadingFile', file.name);
     overlay.style.display = 'flex';
     const reader = new FileReader();
     reader.onload = ev => {
@@ -544,7 +545,7 @@ document.getElementById('file-input').addEventListener('change', e => {
             if (end !== -1) text = text.slice(0, end + 1);
             initData(JSON.parse(text));
         } catch (err) {
-            overlay.textContent = 'Error: ' + err.message;
+            overlay.textContent = t('loadError', err.message);
         }
     };
     reader.readAsText(file);
@@ -588,7 +589,7 @@ function searchAndJump() {
     const zone = getZoneByGrid(col, row);
 
     if (!zone && (col < 0 || col >= COLS || row < 0 || row >= ROWS)) {
-        coordDisplay.textContent = `(${wx}, ${wz}) not found`;
+        coordDisplay.textContent = t('notFound', wx, wz);
         searchHighlight = null;
         draw();
         return;
@@ -621,10 +622,21 @@ document.getElementById('planner-fg').width  = wrap.clientWidth;
 document.getElementById('planner-fg').height = wrap.clientHeight;
 
 loadPrefs();
+applyStaticStrings();
+
+document.getElementById('lang-btn').addEventListener('click', () => {
+    const next = lang === 'en' ? 'ru' : 'en';
+    setLang(next);
+    document.getElementById('lang-btn').textContent = next.toUpperCase();
+    applyStaticStrings();
+    if (RAW.length) draw();
+});
+document.getElementById('lang-btn').textContent = lang.toUpperCase();
+
 
 fetch('data.json')
     .then(r => { if (!r.ok) throw new Error('data.json not found'); return r.json(); })
     .then(data => initData(data))
     .catch(() => {
-        overlay.textContent = 'No data.json found — use "Load JSON" to open a file.';
+        overlay.textContent = t('noData');
     });

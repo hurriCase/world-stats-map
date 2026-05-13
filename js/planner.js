@@ -1,6 +1,7 @@
 // ══════════════════════════════════════════════════════════════════════════════
 // planner.js — Civ Planner
 // ══════════════════════════════════════════════════════════════════════════════
+import { t } from './locale.js';
 import {
     CELL, RAW,
     canvas, ctx, wrap,
@@ -183,7 +184,7 @@ function updatePlannerStats(claimed) {
 function updateTownList(claimed) {
     const list = document.getElementById('town-list');
     if (!towns.length) {
-        list.innerHTML = '<div class="p-empty">Place a capital first,<br>then add towns.</div>';
+        list.innerHTML = `<div class="p-empty">${t('emptyPlanner')}</div>`;
         return;
     }
     list.innerHTML = '';
@@ -196,7 +197,7 @@ function updateTownList(claimed) {
         el.innerHTML = `
       <div class="town-dot" style="background:${t.color}"></div>
       <div style="flex:1;min-width:0">
-        <div class="town-name">${t.isCapital ? '★ Capital' : 'Town'} — Lv ${t.level}</div>
+        <div class="town-name">${t.isCapital ? t('townCapital') : t('townTown')} — Lv ${t.level}</div>
         <div class="town-sub">${s.zones} zones${hasData && s.zones ? ` · H:${s.hammers.toFixed(0)} B:${s.beakers.toFixed(0)} G:${s.growth.toFixed(0)} Hap:${s.happiness.toFixed(1)}` : ''}</div>
       </div>
       <span class="town-remove">✕</span>`;
@@ -239,12 +240,12 @@ document.getElementById('export-btn').addEventListener('click', () => {
     const claimed = computeClaimed();
     const lines = [];
     for (let ti = 0; ti < towns.length; ti++) {
-        const t = towns[ti];
+        const town = towns[ti];
         const s = townZoneStats(ti, claimed);
-        const zone = getZoneByGrid(t.col, t.row);
-        lines.push(`${t.isCapital ? '★ Capital' : 'Town'} (Level ${t.level})`);
+        const zone = getZoneByGrid(town.col, town.row);
+        lines.push(town.isCapital ? t('exportCapital', town.level) : t('exportTown', town.level));
         if (zone) lines.push(`  Zone ID: ${zone.id}  Coords: (${zone.x}, ${zone.z})`);
-        lines.push(`  Zones claimed: ${s.zones}`);
+        lines.push(t('exportZones', s.zones));
         if (RAW.length && s.zones) {
             lines.push(`  Hammers:   ${s.hammers.toFixed(1)}`);
             lines.push(`  Beakers:   ${s.beakers.toFixed(1)}`);
@@ -260,7 +261,7 @@ document.getElementById('export-btn').addEventListener('click', () => {
         h += s.hammers; b += s.beakers; g += s.growth; hap += s.happiness;
     }
     if (RAW.length) {
-        lines.push('── Total ──');
+        lines.push(t('exportTotal'));
         lines.push(`  Hammers:   ${h.toFixed(1)}`);
         lines.push(`  Beakers:   ${b.toFixed(1)}`);
         lines.push(`  Growth:    ${g.toFixed(1)}`);
@@ -269,16 +270,16 @@ document.getElementById('export-btn').addEventListener('click', () => {
     navigator.clipboard.writeText(lines.join('\n'))
         .then(() => {
             const btn = document.getElementById('export-btn');
-            btn.textContent = '✓ Copied!';
+            btn.textContent = t('copiedBtn');
             btn.style.color = '#4edfa8';
-            setTimeout(() => { btn.innerHTML = '&#128196; Export'; btn.style.color = '#6a8aaa'; }, 2000);
+            setTimeout(() => { btn.textContent = t('exportBtn'); btn.style.color = '#6a8aaa'; }, 2000);
         });
 });
 
 document.getElementById('import-btn').addEventListener('click', async () => {
     let text;
     try { text = await navigator.clipboard.readText(); }
-    catch { text = prompt('Paste exported layout:'); }
+    catch { text = prompt(t('pastePrompt')); }
     if (!text) return;
 
     const result = [];
@@ -302,7 +303,7 @@ document.getElementById('import-btn').addEventListener('click', async () => {
     if (current) result.push(current);
 
     const valid = result.filter(t => t.col !== null);
-    if (!valid.length) { alert('Nothing to import'); return; }
+    if (!valid.length) { alert(t('nothingToImport')); return; }
 
     towns = [];
     colorIdx = 0;
@@ -313,9 +314,9 @@ document.getElementById('import-btn').addEventListener('click', async () => {
     draw();
 
     const btn = document.getElementById('import-btn');
-    btn.textContent = `✓ Imported ${valid.length} town(s)`;
+    btn.textContent = t('importedBtn', valid.length);
     btn.style.color = '#4edfa8';
-    setTimeout(() => { btn.innerHTML = '&#128228; Import'; btn.style.color = '#6a8aaa'; }, 2000);
+    setTimeout(() => { btn.textContent = t('importBtn'); btn.style.color = '#6a8aaa'; }, 2000);
 });
 
 // ── Panel toggle ──────────────────────────────────────────────────────────────
