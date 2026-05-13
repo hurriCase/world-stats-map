@@ -323,11 +323,18 @@ export function initPlanner() {
     setMode('capital');
     registerDrawHook(drawPlanner);
 
+    if (localStorage.getItem('worldmap_planner_open') === 'true') {
+        plannerActive = true;
+        document.getElementById('planner-panel').classList.add('open');
+        document.getElementById('planner-toggle-btn').classList.add('active');
+    }
+
     document.getElementById('planner-toggle-btn').addEventListener('click', () => {
         plannerActive = !plannerActive;
         document.getElementById('planner-panel').classList.toggle('open', plannerActive);
         document.getElementById('planner-toggle-btn').classList.toggle('active', plannerActive);
         resize();
+        localStorage.setItem('worldmap_planner_open', plannerActive);
     });
 }
 

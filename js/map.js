@@ -16,6 +16,65 @@ let wasDragging = false;
 let searchHighlight = null;
 let viewMode = 'heat';
 
+// ── Preferences ────────────────────────────────────────────────────────────────────────────────
+const PREFS_KEY = 'worldmap_prefs';
+
+function savePrefs() {
+    const scoreToggles = {};
+    document.querySelectorAll('#score-toggles input[type=checkbox]').forEach(cb => {
+        scoreToggles[cb.dataset.toggle] = cb.checked;
+    });
+    localStorage.setItem(PREFS_KEY, JSON.stringify({
+        currentStat,
+        viewMode,
+        heatOpacity: document.getElementById('heat-opacity').value,
+        scoreToggles,
+        tradesVisible,
+        scale,
+        offsetX,
+        offsetY,
+    }));
+}
+
+function restoreSavedView() {
+    let prefs;
+    try { prefs = JSON.parse(localStorage.getItem(PREFS_KEY)); } catch { return; }
+    if (!prefs || prefs.scale == null) return;
+    scale = prefs.scale; offsetX = prefs.offsetX; offsetY = prefs.offsetY;
+}
+
+function loadPrefs() {
+    let prefs;
+    try { prefs = JSON.parse(localStorage.getItem(PREFS_KEY)); } catch { return; }
+    if (!prefs) return;
+
+    if (prefs.currentStat) {
+        currentStat = prefs.currentStat;
+        document.querySelectorAll('[data-stat]').forEach(b => b.classList.toggle('active', b.dataset.stat === currentStat));
+        document.getElementById('score-toggles').style.display = currentStat === 'score' ? 'flex' : 'none';
+    }
+    if (prefs.viewMode) {
+        viewMode = prefs.viewMode;
+        document.querySelectorAll('[data-view]').forEach(b => b.classList.toggle('active', b.dataset.view === viewMode));
+        document.getElementById('opacity-control').style.display = viewMode === 'both' ? 'flex' : 'none';
+    }
+    if (prefs.heatOpacity != null) {
+        const slider = document.getElementById('heat-opacity');
+        slider.value = prefs.heatOpacity;
+        document.getElementById('opacity-val').textContent = prefs.heatOpacity + '%';
+    }
+    if (prefs.scoreToggles) {
+        document.querySelectorAll('#score-toggles input[type=checkbox]').forEach(cb => {
+            if (prefs.scoreToggles[cb.dataset.toggle] != null)
+                cb.checked = prefs.scoreToggles[cb.dataset.toggle];
+        });
+    }
+    if (prefs.tradesVisible) {
+        tradesVisible = prefs.tradesVisible;
+        document.getElementById('trades-toggle-btn').classList.toggle('active', tradesVisible);
+    }
+}
+
 export const wrap    = document.getElementById('canvas-wrap');
 export const canvas  = document.getElementById('map');
 export const ctx     = canvas.getContext('2d');
@@ -107,6 +166,7 @@ export function initData(data) {
     computeScores();
     computePercentiles();
     centerView();
+    restoreSavedView();
     updateLegend();
     overlay.style.display = 'none';
     coordDisplay.textContent = 'Hover over a zone to see details';
@@ -163,7 +223,6 @@ export function draw() {
             ctx.fillStyle = 'rgba(0,0,0,0.45)';
             ctx.fillRect(offsetX, offsetY, mapW, mapH);
         }
-        const gap = Math.max(0.5, scale * 0.5);
         for (let row = 0; row < ROWS; row++) {
             for (let col = 0; col < COLS; col++) {
                 const zone = grid[row * COLS + col];
@@ -173,7 +232,18 @@ export function draw() {
                 if (px + cs < 0 || py + cs < 0 || px > canvas.width || py > canvas.height) continue;
                 const [r, g, b] = heatColor(getNorm(zone));
                 ctx.fillStyle = `rgb(${r},${g},${b})`;
-                ctx.fillRect(px + gap, py + gap, cs - gap * 2, cs - gap * 2);
+                ctx.fillRect(px, py, cs, cs);
+            }
+        }
+        ctx.strokeStyle = 'rgba(0,0,0,0.35)';
+        ctx.lineWidth = 1;
+        for (let row = 0; row < ROWS; row++) {
+            for (let col = 0; col < COLS; col++) {
+                if (!grid[row * COLS + col]) continue;
+                const px = col * cs + offsetX;
+                const py = row * cs + offsetY;
+                if (px + cs < 0 || py + cs < 0 || px > canvas.width || py > canvas.height) continue;
+                ctx.strokeRect(px, py, cs, cs);
             }
         }
         const ox = Math.round((0 - X_MIN) / STEP) * cs + offsetX;
@@ -313,7 +383,7 @@ wrap.addEventListener('mousedown', e => {
     dragOffX = offsetX;     dragOffY = offsetY;
     wrap.classList.add('grabbing');
 });
-window.addEventListener('mouseup', () => { dragging = false; wrap.classList.remove('grabbing'); });
+window.addEventListener('mouseup', () => { dragging = false; wrap.classList.remove('grabbing'); savePrefs(); });
 window.addEventListener('mousemove', e => {
     if (!dragging) return;
     if (Math.abs(e.clientX - dragStartX) > 3 || Math.abs(e.clientY - dragStartY) > 3) wasDragging = true;
@@ -341,6 +411,7 @@ wrap.addEventListener('wheel', e => {
     const base = COLS && ROWS ? Math.min(wrap.clientWidth / (COLS * CELL), wrap.clientHeight / (ROWS * CELL)) * 0.95 : 1;
     document.getElementById('zoom-display').textContent = `Zoom: ${Math.round(scale / base * 100)}%`;
     draw();
+    savePrefs();
 }, { passive: false });
 
 wrap.addEventListener('mousemove', e => {
@@ -437,6 +508,7 @@ document.querySelectorAll('[data-stat]').forEach(btn => {
         document.getElementById('score-toggles').style.display = currentStat === 'score' ? 'flex' : 'none';
         updateLegend();
         draw();
+        savePrefs();
     });
 });
 
@@ -446,6 +518,7 @@ document.querySelectorAll('#score-toggles input[type=checkbox]').forEach(cb => {
         if (!any) { cb.checked = true; return; }
         computeScores();
         draw();
+        savePrefs();
     });
 });
 
@@ -493,12 +566,14 @@ document.querySelectorAll('[data-view]').forEach(btn => {
         document.querySelectorAll('[data-view]').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         applyViewMode();
+        savePrefs();
     });
 });
 
 heatOpacity.addEventListener('input', () => {
     opacityVal.textContent = heatOpacity.value + '%';
     if (RAW.length) draw();
+    savePrefs();
 });
 
 // ── Coord search ──────────────────────────────────────────────────────────────
@@ -535,6 +610,7 @@ document.getElementById('trades-toggle-btn').addEventListener('click', () => {
     tradesVisible = !tradesVisible;
     document.getElementById('trades-toggle-btn').classList.toggle('active', tradesVisible);
     draw();
+    savePrefs();
 });
 
 // ── Boot ──────────────────────────────────────────────────────────────────────
@@ -543,6 +619,8 @@ canvas.width  = wrap.clientWidth;
 canvas.height = wrap.clientHeight;
 document.getElementById('planner-fg').width  = wrap.clientWidth;
 document.getElementById('planner-fg').height = wrap.clientHeight;
+
+loadPrefs();
 
 fetch('data.json')
     .then(r => { if (!r.ok) throw new Error('data.json not found'); return r.json(); })
