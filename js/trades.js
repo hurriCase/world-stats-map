@@ -138,4 +138,6 @@ export const TRADES_RAW = [
     {name:'Clam',x:7080,z:4776},{name:'Corn',x:6984,z:4776},
     {name:'Citrus',x:7240,z:4872},{name:'Squid',x:7272,z:4792},
     {name:'Pelt',x:7624,z:1192}, {name:'Pearl',x:7384,z:4280},
+    {name:'Guarana',x:7432,z:3192}, {name:'Hemlock',x:7656,z:3128},
+    {name:'Banana',x:7224,z:4504},
 ];
