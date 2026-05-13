@@ -236,17 +236,6 @@ export function draw() {
                 ctx.fillRect(px, py, cs, cs);
             }
         }
-        ctx.strokeStyle = 'rgba(0,0,0,0.35)';
-        ctx.lineWidth = 1;
-        for (let row = 0; row < ROWS; row++) {
-            for (let col = 0; col < COLS; col++) {
-                if (!grid[row * COLS + col]) continue;
-                const px = col * cs + offsetX;
-                const py = row * cs + offsetY;
-                if (px + cs < 0 || py + cs < 0 || px > canvas.width || py > canvas.height) continue;
-                ctx.strokeRect(px, py, cs, cs);
-            }
-        }
         const ox = Math.round((0 - X_MIN) / STEP) * cs + offsetX;
         const oy = Math.round((0 - Z_MIN) / STEP) * cs + offsetY;
         ctx.strokeStyle = 'rgba(255,255,255,0.25)';
@@ -257,6 +246,19 @@ export function draw() {
         ctx.setLineDash([]);
     }
     ctx.globalAlpha = 1;
+
+    // Zone grid borders — always drawn regardless of view mode
+    ctx.strokeStyle = 'rgba(0,0,0,0.35)';
+    ctx.lineWidth = 1;
+    for (let row = 0; row < ROWS; row++) {
+        for (let col = 0; col < COLS; col++) {
+            if (!grid[row * COLS + col]) continue;
+            const px = col * cs + offsetX;
+            const py = row * cs + offsetY;
+            if (px + cs < 0 || py + cs < 0 || px > canvas.width || py > canvas.height) continue;
+            ctx.strokeRect(px, py, cs, cs);
+        }
+    }
 
     const mapSize = 127;
     const centerX = offsetX + (mapSize / 2) * cs;
@@ -321,8 +323,8 @@ export function resize() {
 }
 
 // ── Trades ────────────────────────────────────────────────────────────────────
-const COLOR_WATER = '#00cfff';
-const COLOR_LAND  = '#ffb300';
+const COLOR_WATER = '#00e5ff';
+const COLOR_LAND  = '#4edfa8';
 
 const TRADES = [...new Map(TRADES_RAW.map(t => [`${t.name}|${t.x}|${t.z}`, t])).values()];
 let tradesVisible = false;
@@ -335,7 +337,7 @@ function tradeColor(name) {
 function drawTrades() {
     if (!tradesVisible || !RAW.length) return;
     const cs   = CELL * scale;
-    const dotR = Math.max(2, Math.min(cs * 0.25, 7));
+    const dotR = Math.max(3, Math.min(cs * 0.38, 10));
     const showLabels = cs > 8;
 
     ctx.save();
