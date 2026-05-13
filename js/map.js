@@ -321,8 +321,8 @@ export function resize() {
 }
 
 // ── Trades ────────────────────────────────────────────────────────────────────
-const COLOR_WATER = '#00e5ff';
-const COLOR_LAND  = '#4edfa8';
+const COLOR_WATER = '#00cfff';
+const COLOR_LAND  = '#ffb300';
 
 const TRADES = [...new Map(TRADES_RAW.map(t => [`${t.name}|${t.x}|${t.z}`, t])).values()];
 let tradesVisible = false;
@@ -335,7 +335,7 @@ function tradeColor(name) {
 function drawTrades() {
     if (!tradesVisible || !RAW.length) return;
     const cs   = CELL * scale;
-    const dotR = Math.max(3, Math.min(cs * 0.38, 10));
+    const dotR = Math.max(2, Math.min(cs * 0.25, 7));
     const showLabels = cs > 8;
 
     ctx.save();
