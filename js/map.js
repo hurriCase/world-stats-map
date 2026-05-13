@@ -400,7 +400,7 @@ wrap.addEventListener('wheel', e => {
     e.preventDefault();
     const rect = wrap.getBoundingClientRect();
     const mx = e.clientX - rect.left, my = e.clientY - rect.top;
-    const newScale = Math.max(0.3, Math.min(20, scale * (e.deltaY < 0 ? 1.12 : 0.89)));
+    const newScale = Math.max(0.3, Math.min(80, scale * (e.deltaY < 0 ? 1.12 : 0.89)));
     const realFactor = newScale / scale;
     offsetX = mx - (mx - offsetX) * realFactor;
     offsetY = my - (my - offsetY) * realFactor;
@@ -421,19 +421,26 @@ wrap.addEventListener('mousemove', e => {
     if (dragging || !RAW.length) return;
     const rect = wrap.getBoundingClientRect();
     const cs   = CELL * scale;
-    const col  = Math.floor((e.clientX - rect.left - offsetX) / cs);
-    const row  = Math.floor((e.clientY - rect.top  - offsetY) / cs);
+    const mx   = e.clientX - rect.left;
+    const my   = e.clientY - rect.top;
+    const col  = Math.floor((mx - offsetX) / cs);
+    const row  = Math.floor((my - offsetY) / cs);
+
+    // Exact world coordinates under cursor
+    const worldX = Math.round(X_MIN + (mx - offsetX) / cs * STEP);
+    const worldZ = Math.round(Z_MIN + (my - offsetY) / cs * STEP);
+
     if (col < 0 || col >= COLS || row < 0 || row >= ROWS) {
         tooltip.style.display = 'none';
-        coordDisplay.textContent = t('hoverHint');
+        coordDisplay.textContent = `x ${worldX}  z ${worldZ}`;
         return;
     }
     const zone = grid[row * COLS + col];
-    if (!zone) { tooltip.style.display = 'none'; return; }
+    if (!zone) { tooltip.style.display = 'none'; coordDisplay.textContent = `x ${worldX}  z ${worldZ}`; return; }
 
     const score  = (zone._score * 100).toFixed(1);
     const statVal = currentStat === 'score' ? score + '%' : zone[currentStat];
-    coordDisplay.textContent = `(${zone.x}, ${zone.z})  ·  id ${zone.id}  ·  ${currentStat} ${statVal}`;
+    coordDisplay.textContent = `x ${worldX}  z ${worldZ}  ·  id ${zone.id}  ·  ${currentStat} ${statVal}`;
 
     const hl = s => currentStat === s ? 'highlight' : '';
     tooltip.innerHTML =
