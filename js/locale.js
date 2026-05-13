@@ -60,7 +60,7 @@ const STRINGS = {
         importBtn:      'Import',
         copiedBtn:      '✓ Copied!',
         importedBtn:    (n) => `✓ Imported ${n} town(s)`,
-        emptyPlanner:   'Place a capital first,<br>then add towns.',
+        emptyPlanner:   'Click to place capital,<br>then add towns.<br>Right-click to remove.',
         nothingToImport:'Nothing to import',
         pastePrompt:    'Paste exported layout:',
         // Town list
@@ -124,7 +124,7 @@ const STRINGS = {
         importBtn:      'Импорт',
         copiedBtn:      '✓ Скопировано!',
         importedBtn:    (n) => `✓ Импортировано: ${n}`,
-        emptyPlanner:   'Сначала поставьте столицу,<br>затем добавьте города.',
+        emptyPlanner:   'Нажмите чтобы поставить столицу,<br>затем добавляйте города.<br>ПКМ — удалить город.',
         nothingToImport:'Нечего импортировать',
         pastePrompt:    'Вставьте экспортированные данные:',
         townCapital:    '★ Столица',
@@ -232,7 +232,7 @@ const STRINGS = {
 
 const LANG_KEY = 'worldmap_lang';
 
-export let lang = localStorage.getItem(LANG_KEY) || 'en';
+export let lang = localStorage.getItem(LANG_KEY) || 'ru';
 
 export function t(key, ...args) {
     const val = STRINGS[lang]?.[key] ?? STRINGS.en[key] ?? key;

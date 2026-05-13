@@ -525,11 +525,6 @@ document.querySelectorAll('.weight-row input[type=checkbox]').forEach(cb => {
     });
 });
 
-document.getElementById('reset-btn').addEventListener('click', () => {
-    centerView();
-    document.getElementById('zoom-display').textContent = '100%';
-    draw();
-});
 
 document.getElementById('upload-btn').addEventListener('click', () => {
     document.getElementById('file-input').click();

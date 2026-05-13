@@ -32,7 +32,6 @@ const TOWN_COLORS = ['#4ea8de','#4edfa8','#ffb347','#ff7070','#c77dff','#ff6eb4'
 
 let colorIdx = 0;
 let towns = [], nextId = 1;
-let plannerMode = 'capital';
 let plannerActive = false;
 
 const pfgCanvas = document.getElementById('planner-fg');
@@ -48,13 +47,6 @@ function getOffsets(level) {
         }
     }
     return result;
-}
-
-export function setMode(m) {
-    plannerMode = m;
-    document.getElementById('btn-capital').className = 'p-mode-btn' + (m === 'capital' ? ' active-capital' : '');
-    document.getElementById('btn-town').className    = 'p-mode-btn' + (m === 'town'    ? ' active-town'    : '');
-    document.getElementById('btn-remove').className  = 'p-mode-btn' + (m === 'remove'  ? ' active-remove'  : '');
 }
 
 function hexAlpha(hex, a) {
@@ -92,11 +84,13 @@ export function computeClaimed() {
 // ── Draw (called from map.js draw()) ─────────────────────────────────────────
 export function drawPlanner() {
     pfgCtx.clearRect(0, 0, pfgCanvas.width, pfgCanvas.height);
+    const claimed = computeClaimed();
+    updatePlannerStats(claimed);
+    updateTownList(claimed);
     if (!plannerActive || !towns.length) return;
 
     const { scale } = getState();
     const cs = CELL * scale;
-    const claimed = computeClaimed();
 
     // Fill pass
     for (const [key, ti] of claimed.entries()) {
@@ -152,8 +146,6 @@ export function drawPlanner() {
         pfgCtx.restore();
     }
 
-    updatePlannerStats(claimed);
-    updateTownList(claimed);
 }
 
 function townZoneStats(ti, claimed) {
@@ -189,15 +181,15 @@ function updateTownList(claimed) {
     }
     list.innerHTML = '';
     for (let ti = 0; ti < towns.length; ti++) {
-        const t = towns[ti];
+        const town = towns[ti];
         const s = townZoneStats(ti, claimed);
         const hasData = RAW.length > 0;
         const el = document.createElement('div');
         el.className = 'town-item';
         el.innerHTML = `
-      <div class="town-dot" style="background:${t.color}"></div>
+      <div class="town-dot" style="background:${town.color}"></div>
       <div style="flex:1;min-width:0">
-        <div class="town-name">${t.isCapital ? t('townCapital') : t('townTown')} — Lv ${t.level}</div>
+        <div class="town-name">${town.isCapital ? t('townCapital') : t('townTown')} — Lv ${town.level}</div>
         <div class="town-sub">${s.zones} zones${hasData && s.zones ? ` · H:${s.hammers.toFixed(0)} B:${s.beakers.toFixed(0)} G:${s.growth.toFixed(0)} Hap:${s.happiness.toFixed(1)}` : ''}</div>
       </div>
       <span class="town-remove">✕</span>`;
@@ -207,31 +199,40 @@ function updateTownList(claimed) {
 }
 
 // ── Input events ──────────────────────────────────────────────────────────────
+function findTownAt(col, row) {
+    let best = -1, bestD = Infinity;
+    for (let ti = 0; ti < towns.length; ti++) {
+        const town = towns[ti];
+        const d = (town.col - col) ** 2 + (town.row - row) ** 2;
+        if (d < bestD) { bestD = d; best = ti; }
+    }
+    return bestD === 0 ? best : -1;
+}
+
 wrap.addEventListener('click', e => {
     if (!plannerActive || getWasDragging()) return;
     const rect = wrap.getBoundingClientRect();
     const [col, row] = screenToGridCoord(e.clientX - rect.left, e.clientY - rect.top);
     const level = parseInt(document.getElementById('cult-select').value);
 
-    if (plannerMode === 'remove') {
-        let best = -1, bestD = Infinity;
-        for (let ti = 0; ti < towns.length; ti++) {
-            const t = towns[ti], d = (t.col - col) ** 2 + (t.row - row) ** 2;
-            if (d < bestD) { bestD = d; best = ti; }
-        }
-        if (best >= 0 && bestD <= 9) { towns.splice(best, 1); draw(); }
-        return;
-    }
+    if (findTownAt(col, row) >= 0) return;
 
-    if (plannerMode === 'capital') {
-        const ci = towns.findIndex(t => t.isCapital);
-        if (ci >= 0) { towns[ci].col = col; towns[ci].row = row; towns[ci].level = level; draw(); return; }
+    const hasCapital = towns.some(town => town.isCapital);
+    if (!hasCapital) {
         towns.push({ id: nextId++, col, row, level, isCapital: true, color: TOWN_COLORS[colorIdx++ % TOWN_COLORS.length] });
-        setMode('town');
     } else {
         towns.push({ id: nextId++, col, row, level, isCapital: false, color: TOWN_COLORS[colorIdx++ % TOWN_COLORS.length] });
     }
     draw();
+});
+
+wrap.addEventListener('contextmenu', e => {
+    if (!plannerActive) return;
+    e.preventDefault();
+    const rect = wrap.getBoundingClientRect();
+    const [col, row] = screenToGridCoord(e.clientX - rect.left, e.clientY - rect.top);
+    const index = findTownAt(col, row);
+    if (index >= 0) { towns.splice(index, 1); draw(); }
 });
 
 // ── Export / Import ───────────────────────────────────────────────────────────
@@ -321,7 +322,6 @@ document.getElementById('import-btn').addEventListener('click', async () => {
 
 // ── Panel toggle ──────────────────────────────────────────────────────────────
 export function initPlanner() {
-    setMode('capital');
     registerDrawHook(drawPlanner);
 
     if (localStorage.getItem('worldmap_planner_open') === 'true') {
@@ -338,6 +338,3 @@ export function initPlanner() {
         localStorage.setItem('worldmap_planner_open', plannerActive);
     });
 }
-
-// Expose setMode globally for inline onclick handlers in HTML
-window.setMode = setMode;
