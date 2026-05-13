@@ -21,7 +21,7 @@ const PREFS_KEY = 'worldmap_prefs';
 
 function savePrefs() {
     const scoreToggles = {};
-    document.querySelectorAll('#score-toggles input[type=checkbox]').forEach(cb => {
+    document.querySelectorAll('.weight-row input[type=checkbox]').forEach(cb => {
         scoreToggles[cb.dataset.toggle] = cb.checked;
     });
     localStorage.setItem(PREFS_KEY, JSON.stringify({
@@ -51,7 +51,7 @@ function loadPrefs() {
     if (prefs.currentStat) {
         currentStat = prefs.currentStat;
         document.querySelectorAll('[data-stat]').forEach(b => b.classList.toggle('active', b.dataset.stat === currentStat));
-        document.getElementById('score-toggles').style.display = currentStat === 'score' ? 'flex' : 'none';
+        // score-toggles always visible
     }
     if (prefs.viewMode) {
         viewMode = prefs.viewMode;
@@ -64,14 +64,14 @@ function loadPrefs() {
         document.getElementById('opacity-val').textContent = prefs.heatOpacity + '%';
     }
     if (prefs.scoreToggles) {
-        document.querySelectorAll('#score-toggles input[type=checkbox]').forEach(cb => {
+        document.querySelectorAll('.weight-row input[type=checkbox]').forEach(cb => {
             if (prefs.scoreToggles[cb.dataset.toggle] != null)
                 cb.checked = prefs.scoreToggles[cb.dataset.toggle];
         });
     }
     if (prefs.tradesVisible) {
         tradesVisible = prefs.tradesVisible;
-        document.getElementById('trades-toggle-btn').classList.toggle('active', tradesVisible);
+        document.getElementById('trades-toggle-btn').classList.toggle('active-trades', tradesVisible);
     }
 }
 
@@ -169,7 +169,7 @@ export function initData(data) {
     restoreSavedView();
     updateLegend();
     overlay.style.display = 'none';
-    coordDisplay.textContent = 'Hover over a zone to see details';
+    coordDisplay.textContent = 'hover over a zone';
     resize();
 }
 
@@ -409,7 +409,7 @@ wrap.addEventListener('wheel', e => {
     }
 
     const base = COLS && ROWS ? Math.min(wrap.clientWidth / (COLS * CELL), wrap.clientHeight / (ROWS * CELL)) * 0.95 : 1;
-    document.getElementById('zoom-display').textContent = `Zoom: ${Math.round(scale / base * 100)}%`;
+    document.getElementById('zoom-display').textContent = `${Math.round(scale / base * 100)}%`;
     draw();
     savePrefs();
 }, { passive: false });
@@ -422,7 +422,7 @@ wrap.addEventListener('mousemove', e => {
     const row  = Math.floor((e.clientY - rect.top  - offsetY) / cs);
     if (col < 0 || col >= COLS || row < 0 || row >= ROWS) {
         tooltip.style.display = 'none';
-        coordDisplay.textContent = 'Hover over a zone to see details';
+        coordDisplay.textContent = 'hover over a zone';
         return;
     }
     const zone = grid[row * COLS + col];
@@ -430,7 +430,7 @@ wrap.addEventListener('mousemove', e => {
 
     const score  = (zone._score * 100).toFixed(1);
     const statVal = currentStat === 'score' ? score + '%' : zone[currentStat];
-    coordDisplay.textContent = `Zone (${zone.x}, ${zone.z})  |  ID: ${zone.id}  |  ${currentStat}: ${statVal}`;
+    coordDisplay.textContent = `(${zone.x}, ${zone.z})  ·  id ${zone.id}  ·  ${currentStat} ${statVal}`;
 
     const hl = s => currentStat === s ? 'highlight' : '';
     tooltip.innerHTML =
@@ -505,16 +505,16 @@ document.querySelectorAll('[data-stat]').forEach(btn => {
         document.querySelectorAll('[data-stat]').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         currentStat = btn.dataset.stat;
-        document.getElementById('score-toggles').style.display = currentStat === 'score' ? 'flex' : 'none';
+        // score-toggles always visible
         updateLegend();
         draw();
         savePrefs();
     });
 });
 
-document.querySelectorAll('#score-toggles input[type=checkbox]').forEach(cb => {
+document.querySelectorAll('.weight-row input[type=checkbox]').forEach(cb => {
     cb.addEventListener('change', () => {
-        const any = [...document.querySelectorAll('#score-toggles input')].some(c => c.checked);
+        const any = [...document.querySelectorAll('.weight-row input')].some(c => c.checked);
         if (!any) { cb.checked = true; return; }
         computeScores();
         draw();
@@ -524,7 +524,7 @@ document.querySelectorAll('#score-toggles input[type=checkbox]').forEach(cb => {
 
 document.getElementById('reset-btn').addEventListener('click', () => {
     centerView();
-    document.getElementById('zoom-display').textContent = 'Zoom: 100%';
+    document.getElementById('zoom-display').textContent = '100%';
     draw();
 });
 
@@ -588,7 +588,7 @@ function searchAndJump() {
     const zone = getZoneByGrid(col, row);
 
     if (!zone && (col < 0 || col >= COLS || row < 0 || row >= ROWS)) {
-        coordDisplay.textContent = `Zone (${wx}, ${wz}) not found`;
+        coordDisplay.textContent = `(${wx}, ${wz}) not found`;
         searchHighlight = null;
         draw();
         return;
@@ -599,7 +599,7 @@ function searchAndJump() {
     offsetX = wrap.clientWidth  / 2 - (col + 0.5) * cs;
     offsetY = wrap.clientHeight / 2 - (row + 0.5) * cs;
     draw();
-    if (zone) coordDisplay.textContent = `Found: Zone (${zone.x}, ${zone.z})  |  ID: ${zone.id}`;
+    if (zone) coordDisplay.textContent = `(${zone.x}, ${zone.z})  ·  id ${zone.id}`;
 }
 
 document.getElementById('search-btn').addEventListener('click', searchAndJump);
@@ -608,7 +608,7 @@ document.getElementById('search-z').addEventListener('keydown', e => { if (e.key
 
 document.getElementById('trades-toggle-btn').addEventListener('click', () => {
     tradesVisible = !tradesVisible;
-    document.getElementById('trades-toggle-btn').classList.toggle('active', tradesVisible);
+    document.getElementById('trades-toggle-btn').classList.toggle('active-trades', tradesVisible);
     draw();
     savePrefs();
 });

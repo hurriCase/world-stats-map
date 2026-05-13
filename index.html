@@ -3,306 +3,542 @@
 <head>
     <meta charset="UTF-8">
     <title>Minecraft World Map – Zone Stats</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --bg:        #0b0e14;
+            --surface:   rgba(13, 18, 28, 0.88);
+            --surface-s: rgba(13, 18, 28, 0.96);
+            --border:    #1e2a3d;
+            --border2:   #2d3f5a;
+            --accent:    #e8512a;
+            --accent2:   #2a7de8;
+            --green:     #2ae87a;
+            --text:      #c8d4e8;
+            --text-dim:  #5a6f8a;
+            --text-mute: #2e3d52;
+            --mono:      'IBM Plex Mono', monospace;
+            --sans:      'IBM Plex Sans', sans-serif;
+            --radius:    8px;
+        }
+
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { background: #1a1a2e; color: #e0e0e0; font-family: 'Segoe UI', sans-serif; overflow: hidden; height: 100vh; display: flex; flex-direction: column; }
 
-        #header {
-            background: #16213e;
-            padding: 10px 16px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            flex-wrap: wrap;
-            border-bottom: 1px solid #0f3460;
-            flex-shrink: 0;
-        }
-        #header h1 { font-size: 15px; font-weight: 600; color: #e94560; letter-spacing: 1px; white-space: nowrap; }
-
-        .btn-group { display: flex; gap: 4px; }
-        .stat-btn {
-            padding: 5px 12px;
-            border: 1px solid #0f3460;
-            background: #0f3460;
-            color: #aaa;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 12px;
-            font-weight: 500;
-            transition: all 0.15s;
-        }
-        .stat-btn:hover { background: #1a4a8a; color: #fff; }
-        .stat-btn.active { background: #e94560; border-color: #e94560; color: #fff; }
-
-        #score-toggles {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 4px 10px;
-            background: #0a2240;
-            border: 1px solid #0f3460;
-            border-radius: 4px;
-            font-size: 11px;
-        }
-        #score-toggles .toggle-label { color: #555; margin-right: 2px; }
-        #score-toggles label { display: flex; align-items: center; gap: 4px; cursor: pointer; color: #aaa; user-select: none; }
-        #score-toggles input[type=checkbox] { accent-color: #e94560; cursor: pointer; }
-        #score-toggles input:checked + span { color: #fff; font-weight: 600; }
-
-        #upload-btn {
-            padding: 5px 10px;
-            border: 1px solid #555;
-            background: #222;
-            color: #aaa;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 11px;
-            white-space: nowrap;
-        }
-        #upload-btn:hover { background: #333; color: #fff; }
-        #file-input { display: none; }
-
-        #legend {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin-left: auto;
-            font-size: 11px;
-            color: #aaa;
-            white-space: nowrap;
-        }
-        #gradient-bar { width: 120px; height: 14px; border-radius: 3px; border: 1px solid #333; }
-
-        #info-bar {
-            background: #0f3460;
-            padding: 3px 16px;
-            font-size: 11px;
-            color: #aaa;
-            flex-shrink: 0;
-            display: flex;
-            gap: 16px;
-        }
-
-        #main-area { flex: 1; display: flex; overflow: hidden; }
-
-        #canvas-wrap {
-            flex: 1;
-            position: relative;
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: var(--sans);
             overflow: hidden;
+            height: 100vh;
+            display: flex;
+        }
+
+        /* ── Map fills everything ─────────────────────────────────────────── */
+        #canvas-wrap {
+            position: absolute;
+            inset: 0;
             cursor: grab;
+            background: var(--bg);
         }
         #canvas-wrap.grabbing { cursor: grabbing; }
         canvas { position: absolute; top: 0; left: 0; image-rendering: pixelated; }
 
+        /* ── Shared HUD panel style ───────────────────────────────────────── */
+        .hud {
+            position: absolute;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+        }
+
+        /* ── TOP BAR: title + view toggles + utility buttons ─────────────── */
+        #hud-top {
+            top: 12px; left: 12px; right: 12px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 0 12px;
+            height: 48px;
+            overflow: hidden;
+        }
+
+        #hud-top h1 {
+            font-family: var(--mono);
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--accent);
+            letter-spacing: .14em;
+            text-transform: uppercase;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        .v-sep {
+            width: 1px; height: 18px;
+            background: var(--border);
+            flex-shrink: 0;
+        }
+
+        /* ── Pill groups ──────────────────────────────────────────────────── */
+        .btn-group {
+            display: flex;
+            gap: 2px;
+            background: rgba(0,0,0,0.3);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 3px;
+            flex-shrink: 0;
+        }
+
+        .stat-btn {
+            padding: 5px 13px;
+            border: none;
+            background: transparent;
+            color: var(--text-dim);
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: var(--sans);
+            font-size: 13px;
+            font-weight: 500;
+            transition: background .12s, color .12s;
+            white-space: nowrap;
+        }
+        .stat-btn:hover  { background: rgba(255,255,255,0.06); color: var(--text); }
+        .stat-btn.active { background: var(--accent); color: #fff; }
+
+        /* ── Icon buttons ─────────────────────────────────────────────────── */
+        .icon-btn {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            padding: 5px 12px;
+            border: 1px solid var(--border);
+            background: transparent;
+            color: var(--text-dim);
+            border-radius: 6px;
+            cursor: pointer;
+            font-family: var(--sans);
+            font-size: 13px;
+            font-weight: 500;
+            transition: all .12s;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+        .icon-btn:hover          { border-color: var(--border2); color: var(--text); background: rgba(255,255,255,0.05); }
+        .icon-btn.active-trades  { border-color: #2ae87a55; color: var(--green);   background: rgba(42,232,122,0.08); }
+        .icon-btn.active-planner { border-color: var(--accent2); color: var(--accent2); background: rgba(42,125,232,0.1); }
+
+        #upload-btn { color: var(--text); border-color: var(--border2); }
+
+        #opacity-control {
+            display: none;
+            align-items: center;
+            gap: 7px;
+            font-size: 11px;
+            color: var(--text-dim);
+            font-family: var(--mono);
+            flex-shrink: 0;
+        }
+        #heat-opacity { width: 64px; accent-color: var(--accent); cursor: pointer; }
+        #file-input { display: none; }
+
+        /* spacer pushes legend to the right */
+        .h-spacer { flex: 1; min-width: 0; }
+
+        /* ── Legend (top right, inside top bar) ───────────────────────────── */
+        #legend {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            font-size: 10px;
+            font-family: var(--mono);
+            color: var(--text-dim);
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+        #gradient-bar { width: 80px; height: 8px; border-radius: 2px; border: 1px solid var(--border); }
+
+        /* ── LEFT PANEL: stat selector + score weights ────────────────────── */
+        #hud-left {
+            top: 64px; left: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            padding: 10px;
+            width: 160px;
+        }
+
+        #hud-left .panel-label {
+            font-family: var(--mono);
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-mute);
+            letter-spacing: .1em;
+            text-transform: uppercase;
+            margin-bottom: 2px;
+        }
+
+        #hud-left .stat-btn {
+            padding: 7px 11px;
+            text-align: left;
+            border-radius: 5px;
+            font-size: 13px;
+        }
+        #hud-left .stat-btn.active {
+            background: var(--accent);
+            color: #fff;
+        }
+
+        .weight-row {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 3px 0;
+            border-top: 1px solid var(--border);
+        }
+        .weight-row:first-of-type { margin-top: 4px; }
+        .weight-row label {
+            display: flex; align-items: center; gap: 6px;
+            cursor: pointer; color: var(--text-dim);
+            user-select: none; font-size: 13px;
+            transition: color .12s; width: 100%;
+        }
+        .weight-row label:hover { color: var(--text); }
+        .weight-row input[type=checkbox] { accent-color: var(--accent); cursor: pointer; width: 14px; height: 14px; flex-shrink: 0; }
+        .weight-row input:checked + span { color: var(--text); }
+
+        /* ── BOTTOM LEFT: coordinates ─────────────────────────────────────── */
+        #hud-coords {
+            bottom: 12px; left: 12px;
+            padding: 8px 14px;
+            min-width: 160px;
+        }
+
+        #hud-coords .coords-label {
+            font-family: var(--mono);
+            font-size: 9px;
+            color: var(--text-mute);
+            letter-spacing: .1em;
+            text-transform: uppercase;
+            margin-bottom: 4px;
+        }
+
+        #coord-display {
+            font-family: var(--mono);
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text);
+            letter-spacing: .04em;
+        }
+
+        /* ── BOTTOM RIGHT: zoom ───────────────────────────────────────────── */
+        #hud-zoom {
+            bottom: 12px; right: 12px;
+            padding: 6px 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        #hud-zoom .zoom-label {
+            font-family: var(--mono);
+            font-size: 9px;
+            color: var(--text-mute);
+            letter-spacing: .1em;
+            text-transform: uppercase;
+        }
+
+        #zoom-display {
+            font-family: var(--mono);
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text);
+        }
+
+        /* ── SEARCH: bottom center ────────────────────────────────────────── */
+        #hud-search {
+            bottom: 12px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            padding: 6px 10px;
+        }
+
+        #hud-search input {
+            width: 68px;
+            padding: 4px 8px;
+            background: rgba(0,0,0,0.4);
+            border: 1px solid var(--border);
+            border-radius: 5px;
+            color: var(--text);
+            font-family: var(--mono);
+            font-size: 11px;
+            outline: none;
+            transition: border-color .12s;
+        }
+        #hud-search input:focus { border-color: var(--border2); }
+        #hud-search input::placeholder { color: var(--text-mute); }
+        #hud-search .search-label {
+            font-family: var(--mono);
+            font-size: 9px;
+            color: var(--text-mute);
+            letter-spacing: .1em;
+            text-transform: uppercase;
+            margin-right: 2px;
+        }
+
+        /* ── Loading overlay ──────────────────────────────────────────────── */
         #overlay {
             position: absolute;
             inset: 0;
             display: flex;
             align-items: center;
             justify-content: center;
-            background: rgba(15,20,40,0.85);
-            font-size: 14px;
-            color: #aaa;
-            z-index: 10;
+            background: rgba(11,14,20,0.92);
+            font-size: 11px;
+            font-family: var(--mono);
+            color: var(--text-dim);
+            z-index: 50;
+            letter-spacing: .06em;
         }
 
+        /* ── Tooltip ──────────────────────────────────────────────────────── */
         #tooltip {
             position: fixed;
-            background: rgba(22,33,62,0.97);
-            border: 1px solid #e94560;
-            border-radius: 6px;
+            background: var(--surface-s);
+            border: 1px solid var(--border2);
+            border-radius: 8px;
             padding: 10px 13px;
-            font-size: 12px;
+            font-size: 11px;
             pointer-events: none;
             display: none;
             z-index: 100;
             min-width: 200px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
-            line-height: 1.7;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+            line-height: 1.8;
+            backdrop-filter: blur(8px);
         }
-        #tooltip .tip-title { font-weight: 700; color: #e94560; margin-bottom: 4px; font-size: 13px; }
-        #tooltip .tip-biome { color: #aaa; font-size: 11px; margin-bottom: 6px; }
-        #tooltip .tip-row { display: flex; justify-content: space-between; gap: 16px; }
-        #tooltip .tip-label { color: #aaa; }
-        #tooltip .tip-val { font-weight: 600; color: #fff; }
-        #tooltip .tip-val.highlight { color: #ffd700; }
+        #tooltip .tip-title  { font-family: var(--mono); font-weight: 600; color: var(--text); margin-bottom: 2px; font-size: 12px; }
+        #tooltip .tip-biome  { color: var(--text-dim); font-size: 10px; margin-bottom: 7px; font-family: var(--mono); }
+        #tooltip .tip-row    { display: flex; justify-content: space-between; gap: 20px; }
+        #tooltip .tip-label  { color: var(--text-dim); }
+        #tooltip .tip-val    { font-family: var(--mono); font-weight: 500; color: var(--text); }
+        #tooltip .tip-val.highlight { color: #f0c040; }
 
-        #reset-btn, #planner-toggle-btn, #trades-toggle-btn {
-            padding: 5px 10px;
-            border: 1px solid #555;
-            background: #222;
-            color: #aaa;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 11px;
-            white-space: nowrap;
-        }
-        #reset-btn:hover          { background: #333; color: #fff; }
-        #planner-toggle-btn:hover { background: #333; color: #fff; }
-        #planner-toggle-btn.active { background: #0f3460; border-color: #e94560; color: #e94560; }
-        #trades-toggle-btn:hover  { background: #333; color: #fff; }
-        #trades-toggle-btn.active { background: #1a3d20; border-color: #4edfa8; color: #4edfa8; }
-
-        /* ── Civ Planner Panel ─────────────────────────────────────────────── */
+        /* ── Planner panel (right side, below top bar) ────────────────────── */
         #planner-panel {
-            width: 260px;
-            flex-shrink: 0;
-            border-left: 1px solid #0f3460;
-            background: #0d1520;
+            position: absolute;
+            top: 64px; right: 12px; bottom: 12px;
+            width: 244px;
+            background: var(--surface-s);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            backdrop-filter: blur(8px);
             display: none;
             flex-direction: column;
             overflow: hidden;
+            z-index: 20;
         }
         #planner-panel.open { display: flex; }
 
-        #planner-top { padding: 10px 12px; border-bottom: 1px solid #0f3460; }
-        #planner-top h2 { font-size: 11px; font-weight: 600; color: #e94560; letter-spacing: .06em; text-transform: uppercase; margin-bottom: 8px; }
+        #planner-top { padding: 11px 12px; border-bottom: 1px solid var(--border); }
+        #planner-top h2 {
+            font-family: var(--mono);
+            font-size: 9px; font-weight: 600;
+            color: var(--text-mute);
+            letter-spacing: .12em; text-transform: uppercase;
+            margin-bottom: 10px;
+        }
 
-        .p-mode-row { display: flex; gap: 4px; margin-bottom: 8px; }
+        .p-mode-row {
+            display: flex; gap: 2px; margin-bottom: 10px;
+            background: rgba(0,0,0,0.3);
+            border: 1px solid var(--border); border-radius: 6px; padding: 3px;
+        }
         .p-mode-btn {
-            flex: 1; padding: 5px 0; font-size: 11px; font-weight: 500;
-            border: 1px solid #1a2a40; border-radius: 4px; cursor: pointer;
-            background: #111d2e; color: #6a8aaa; transition: all .15s;
+            flex: 1; padding: 4px 0; font-size: 11px; font-weight: 500;
+            border: none; border-radius: 4px; cursor: pointer;
+            background: transparent; color: var(--text-dim);
+            font-family: var(--sans); transition: all .12s;
         }
-        .p-mode-btn:hover          { color: #ccc; border-color: #2a3a50; }
-        .p-mode-btn.active-capital { background: #0c3a6e; border-color: #1a5fa0; color: #7ec8ff; }
-        .p-mode-btn.active-town    { background: #0a3d2e; border-color: #0f6e50; color: #4edfa8; }
-        .p-mode-btn.active-remove  { background: #3d0a0a; border-color: #a32d2d; color: #ff7070; }
+        .p-mode-btn:hover          { color: var(--text); background: rgba(255,255,255,0.06); }
+        .p-mode-btn.active-capital { background: #1a3a6e; color: #7ec8ff; }
+        .p-mode-btn.active-town    { background: #0e3020; color: var(--green); }
+        .p-mode-btn.active-remove  { background: #3a1010; color: #ff6060; }
 
-        .p-cult-row { display: flex; align-items: center; gap: 6px; }
-        .p-cult-row label { font-size: 11px; color: #6a8aaa; white-space: nowrap; }
+        .p-cult-row { display: flex; align-items: center; gap: 8px; }
+        .p-cult-row label { font-size: 9px; color: var(--text-dim); white-space: nowrap; font-family: var(--mono); text-transform: uppercase; letter-spacing: .08em; }
         .p-cult-row select {
-            flex: 1; font-size: 11px; padding: 4px 5px;
-            border: 1px solid #1a2a40; border-radius: 4px;
-            background: #111d2e; color: #e0e0e0; outline: none; cursor: pointer;
+            flex: 1; font-size: 11px; padding: 4px 7px;
+            border: 1px solid var(--border); border-radius: 5px;
+            background: rgba(0,0,0,0.4); color: var(--text);
+            font-family: var(--mono); outline: none; cursor: pointer;
         }
 
-        #town-list { flex: 1; overflow-y: auto; padding: 6px; }
+        #town-list { flex: 1; overflow-y: auto; padding: 7px; }
         #town-list::-webkit-scrollbar { width: 3px; }
-        #town-list::-webkit-scrollbar-thumb { background: #1a2a40; border-radius: 2px; }
+        #town-list::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
 
         .town-item {
-            display: flex; align-items: flex-start; gap: 6px;
-            padding: 6px 8px; border-radius: 4px; border: 1px solid #1a2a40;
-            margin-bottom: 4px; background: #111d2e;
+            display: flex; align-items: flex-start; gap: 8px;
+            padding: 6px 8px; border-radius: 5px; border: 1px solid var(--border);
+            margin-bottom: 3px; background: rgba(0,0,0,0.2); transition: border-color .12s;
         }
-        .town-dot    { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; margin-top: 3px; }
-        .town-name   { font-size: 11px; font-weight: 500; color: #ccc; }
-        .town-sub    { font-size: 10px; color: #456; margin-top: 1px; }
-        .town-remove { cursor: pointer; color: #334; font-size: 13px; line-height: 1; padding: 0 2px; margin-left: auto; flex-shrink: 0; transition: color .1s; }
+        .town-item:hover { border-color: var(--border2); }
+        .town-dot    { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; margin-top: 4px; }
+        .town-name   { font-size: 11px; font-weight: 500; color: var(--text); }
+        .town-sub    { font-size: 10px; color: var(--text-dim); margin-top: 2px; font-family: var(--mono); }
+        .town-remove { cursor: pointer; color: var(--text-mute); font-size: 14px; line-height: 1; padding: 0 2px; margin-left: auto; flex-shrink: 0; transition: color .1s; }
         .town-remove:hover { color: #ff5555; }
 
-        #planner-stats { padding: 10px 12px; border-top: 1px solid #0f3460; background: #0a1018; }
-        #planner-stats h3 { font-size: 10px; font-weight: 600; color: #456; text-transform: uppercase; letter-spacing: .05em; margin-bottom: 6px; }
-        .p-stat-grid  { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
-        .p-stat-card  { background: #0d1520; border: 1px solid #1a2a40; border-radius: 4px; padding: 5px 8px; }
-        .p-stat-label { font-size: 10px; color: #456; }
-        .p-stat-val   { font-size: 14px; font-weight: 600; color: #cde; }
+        #planner-stats { padding: 10px 12px; border-top: 1px solid var(--border); }
+        #planner-stats h3 { font-size: 9px; font-weight: 600; color: var(--text-mute); text-transform: uppercase; letter-spacing: .1em; margin-bottom: 7px; font-family: var(--mono); }
+        .p-stat-grid  { display: grid; grid-template-columns: 1fr 1fr; gap: 3px; margin-bottom: 8px; }
+        .p-stat-card  { background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-radius: 5px; padding: 5px 8px; }
+        .p-stat-label { font-size: 9px; color: var(--text-dim); text-transform: uppercase; letter-spacing: .06em; font-family: var(--mono); }
+        .p-stat-val   { font-size: 15px; font-weight: 600; color: var(--text); font-family: var(--mono); margin-top: 1px; }
 
-        .p-empty { padding: 14px 10px; font-size: 11px; color: #345; text-align: center; line-height: 1.6; }
+        .p-action-btn {
+            width: 100%; padding: 5px 0; font-size: 11px;
+            border: 1px solid var(--border); background: rgba(0,0,0,0.2);
+            color: var(--text-dim); border-radius: 5px; cursor: pointer;
+            font-family: var(--sans); font-weight: 500;
+            transition: all .12s; margin-top: 3px;
+        }
+        .p-action-btn:hover { border-color: var(--border2); color: var(--text); }
+
+        .p-empty { padding: 20px 10px; font-size: 11px; color: var(--text-mute); text-align: center; line-height: 1.7; font-family: var(--mono); }
 
         #planner-fg { position: absolute; top: 0; left: 0; pointer-events: none; z-index: 5; }
     </style>
 </head>
 <body>
 
-<div id="header">
-    <h1>&#9935; WORLD MAP</h1>
-    <div class="btn-group">
-        <button class="stat-btn active" data-stat="score">&#11088; Score</button>
-        <button class="stat-btn" data-stat="hammers">&#128296; Hammers</button>
-        <button class="stat-btn" data-stat="beakers">&#128300; Beakers</button>
-        <button class="stat-btn" data-stat="growth">&#127806; Growth</button>
-        <button class="stat-btn" data-stat="happiness">&#128522; Happiness</button>
-    </div>
-    <div id="score-toggles">
-        <span class="toggle-label">include:</span>
-        <label><input type="checkbox" data-toggle="hammers" checked><span>&#128296; Hammers</span></label>
-        <label><input type="checkbox" data-toggle="beakers" checked><span>&#128300; Beakers</span></label>
-        <label><input type="checkbox" data-toggle="growth" checked><span>&#127806; Growth</span></label>
-        <label><input type="checkbox" data-toggle="happiness" checked><span>&#128522; Happiness</span></label>
-    </div>
-    <button id="reset-btn">&#8962; Reset View</button>
+<div id="canvas-wrap">
+    <canvas id="map"></canvas>
+    <canvas id="planner-fg"></canvas>
+    <div id="overlay">Loading data.json…</div>
+</div>
+
+<!-- TOP BAR -->
+<div class="hud" id="hud-top">
+    <h1>⬡ World Map</h1>
+    <div class="v-sep"></div>
+
     <div class="btn-group" id="view-mode-group">
-        <button class="stat-btn active" data-view="heat">&#127777; Heat Map</button>
-        <button class="stat-btn" data-view="image">&#127760; Image</button>
-        <button class="stat-btn" data-view="both">&#9678; Both</button>
+        <button class="stat-btn active" data-view="heat">Heat</button>
+        <button class="stat-btn" data-view="image">Image</button>
+        <button class="stat-btn" data-view="both">Both</button>
     </div>
-    <div id="opacity-control" style="display:none; align-items:center; gap:6px; font-size:11px; color:#aaa;">
-        <span>Opacity:</span>
-        <input type="range" id="heat-opacity" min="0" max="100" value="70" style="width:80px; accent-color:#e94560;">
+
+    <div id="opacity-control">
+        <span>Opacity</span>
+        <input type="range" id="heat-opacity" min="0" max="100" value="70">
         <span id="opacity-val">70%</span>
     </div>
-    <div id="coord-search" style="display:flex; align-items:center; gap:4px;">
-        <input type="number" id="search-x" placeholder="X" style="width:70px; padding:4px 6px; background:#111d2e; border:1px solid #1a2a40; border-radius:4px; color:#e0e0e0; font-size:11px;">
-        <input type="number" id="search-z" placeholder="Z" style="width:70px; padding:4px 6px; background:#111d2e; border:1px solid #1a2a40; border-radius:4px; color:#e0e0e0; font-size:11px;">
-        <button id="search-btn" style="padding:5px 10px; border:1px solid #0f3460; background:#0f3460; color:#aaa; border-radius:4px; cursor:pointer; font-size:11px;">&#128269; Go</button>
-    </div>
-    <button id="trades-toggle-btn">&#128178; Trades</button>
-    <button id="planner-toggle-btn">&#127759; Civ Planner</button>
-    <button id="upload-btn">&#128194; Load JSON</button>
+
+    <div class="v-sep"></div>
+
+    <button class="icon-btn" id="reset-btn">Reset View</button>
+    <button class="icon-btn" id="trades-toggle-btn">Trades</button>
+    <button class="icon-btn" id="planner-toggle-btn">Civ Planner</button>
+
+    <div class="v-sep"></div>
+
+    <button class="icon-btn" id="upload-btn">Load JSON</button>
     <input type="file" id="file-input" accept=".json,.txt">
+
+    <div class="h-spacer"></div>
+
     <div id="legend">
         <span id="legend-min"></span>
-        <canvas id="gradient-bar" width="120" height="14"></canvas>
+        <canvas id="gradient-bar" width="80" height="8"></canvas>
         <span id="legend-max"></span>
     </div>
 </div>
 
-<div id="info-bar">
-    <span id="coord-display">Loading data...</span>
-    <span id="zoom-display">Zoom: 100%</span>
+<!-- LEFT PANEL: stat + weights -->
+<div class="hud" id="hud-left">
+    <div class="panel-label">Stat</div>
+    <button class="stat-btn active" data-stat="score">Score</button>
+    <button class="stat-btn" data-stat="hammers">Hammers</button>
+    <button class="stat-btn" data-stat="beakers">Beakers</button>
+    <button class="stat-btn" data-stat="growth">Growth</button>
+    <button class="stat-btn" data-stat="happiness">Happiness</button>
+
+    <div class="panel-label" style="margin-top:8px">Weight</div>
+    <div class="weight-row"><label><input type="checkbox" data-toggle="hammers" checked><span>Hammers</span></label></div>
+    <div class="weight-row"><label><input type="checkbox" data-toggle="beakers" checked><span>Beakers</span></label></div>
+    <div class="weight-row"><label><input type="checkbox" data-toggle="growth" checked><span>Growth</span></label></div>
+    <div class="weight-row"><label><input type="checkbox" data-toggle="happiness" checked><span>Happiness</span></label></div>
 </div>
 
-<div id="main-area">
-    <div id="canvas-wrap">
-        <canvas id="map"></canvas>
-        <canvas id="planner-fg"></canvas>
-        <div id="overlay">Loading data.json…</div>
-    </div>
+<!-- BOTTOM LEFT: coordinates -->
+<div class="hud" id="hud-coords">
+    <div class="coords-label">Zone</div>
+    <div id="coord-display">—</div>
+</div>
 
-    <!-- Civ Planner Panel -->
-    <div id="planner-panel">
-        <div id="planner-top">
-            <h2>Civ Planner</h2>
-            <div class="p-mode-row">
-                <button class="p-mode-btn" id="btn-capital" onclick="setMode('capital')">Capital</button>
-                <button class="p-mode-btn" id="btn-town"    onclick="setMode('town')">Town</button>
-                <button class="p-mode-btn" id="btn-remove"  onclick="setMode('remove')">Remove</button>
-            </div>
-            <div class="p-cult-row">
-                <label>Culture level</label>
-                <select id="cult-select">
-                    <option value="1">1 — 1 zone</option>
-                    <option value="2">2 — 2 zones</option>
-                    <option value="3">3 — 3 zones</option>
-                    <option value="4">4 — 4 zones</option>
-                    <option value="5">5 — 5 zones</option>
-                    <option value="6">6 — 7 zones</option>
-                    <option value="7">7 — 9 zones</option>
-                    <option value="8">8 — 12 zones</option>
-                    <option value="9">9 — 15 zones</option>
-                    <option value="10">10 — 18 zones</option>
-                    <option value="11">11 — 22 zones</option>
-                    <option value="12">12 — 26 zones</option>
-                    <option value="13">13 — 30 zones</option>
-                    <option value="14">14 — 35 zones</option>
-                    <option value="15">15 — 40 zones</option>
-                </select>
-            </div>
+<!-- BOTTOM CENTER: coord search -->
+<div class="hud" id="hud-search">
+    <span class="search-label">Jump to</span>
+    <input type="number" id="search-x" placeholder="X">
+    <input type="number" id="search-z" placeholder="Z">
+    <button class="icon-btn" id="search-btn">Go</button>
+</div>
+
+<!-- BOTTOM RIGHT: zoom -->
+<div class="hud" id="hud-zoom">
+    <span class="zoom-label">Zoom</span>
+    <span id="zoom-display">100%</span>
+</div>
+
+<!-- PLANNER PANEL -->
+<div id="planner-panel">
+    <div id="planner-top">
+        <h2>Civ Planner</h2>
+        <div class="p-mode-row">
+            <button class="p-mode-btn" id="btn-capital" onclick="setMode('capital')">Capital</button>
+            <button class="p-mode-btn" id="btn-town"    onclick="setMode('town')">Town</button>
+            <button class="p-mode-btn" id="btn-remove"  onclick="setMode('remove')">Remove</button>
         </div>
-        <div id="town-list"><div class="p-empty">Place a capital first,<br>then add towns.</div></div>
-        <div id="planner-stats">
-            <h3>Total — all towns</h3>
-            <div class="p-stat-grid">
-                <div class="p-stat-card"><div class="p-stat-label">Hammers</div><div class="p-stat-val" id="s-hammers">—</div></div>
-                <div class="p-stat-card"><div class="p-stat-label">Beakers</div><div class="p-stat-val" id="s-beakers">—</div></div>
-                <div class="p-stat-card"><div class="p-stat-label">Growth</div><div class="p-stat-val" id="s-growth">—</div></div>
-                <div class="p-stat-card"><div class="p-stat-label">Happiness</div><div class="p-stat-val" id="s-happiness">—</div></div>
-            </div>
-            <button id="export-btn" style="margin-top:8px;width:100%;padding:5px 0;font-size:11px;border:1px solid #1a2a40;background:#111d2e;color:#6a8aaa;border-radius:4px;cursor:pointer;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#6a8aaa'">&#128196; Export</button>
-            <button id="import-btn" style="margin-top:4px;width:100%;padding:5px 0;font-size:11px;border:1px solid #1a2a40;background:#111d2e;color:#6a8aaa;border-radius:4px;cursor:pointer;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#6a8aaa'">&#128228; Import</button>
+        <div class="p-cult-row">
+            <label>Level</label>
+            <select id="cult-select">
+                <option value="1">1 — 1 zone</option>
+                <option value="2">2 — 2 zones</option>
+                <option value="3">3 — 3 zones</option>
+                <option value="4">4 — 4 zones</option>
+                <option value="5">5 — 5 zones</option>
+                <option value="6">6 — 7 zones</option>
+                <option value="7">7 — 9 zones</option>
+                <option value="8">8 — 12 zones</option>
+                <option value="9">9 — 15 zones</option>
+                <option value="10">10 — 18 zones</option>
+                <option value="11">11 — 22 zones</option>
+                <option value="12">12 — 26 zones</option>
+                <option value="13">13 — 30 zones</option>
+                <option value="14">14 — 35 zones</option>
+                <option value="15">15 — 40 zones</option>
+            </select>
         </div>
+    </div>
+    <div id="town-list"><div class="p-empty">Place a capital first,<br>then add towns.</div></div>
+    <div id="planner-stats">
+        <h3>Total</h3>
+        <div class="p-stat-grid">
+            <div class="p-stat-card"><div class="p-stat-label">Hammers</div><div class="p-stat-val" id="s-hammers">—</div></div>
+            <div class="p-stat-card"><div class="p-stat-label">Beakers</div><div class="p-stat-val" id="s-beakers">—</div></div>
+            <div class="p-stat-card"><div class="p-stat-label">Growth</div><div class="p-stat-val" id="s-growth">—</div></div>
+            <div class="p-stat-card"><div class="p-stat-label">Happiness</div><div class="p-stat-val" id="s-happiness">—</div></div>
+        </div>
+        <button class="p-action-btn" id="export-btn">Export</button>
+        <button class="p-action-btn" id="import-btn">Import</button>
     </div>
 </div>
 
